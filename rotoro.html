@@ -53,11 +53,11 @@
 			let size = 360
 			if (!location.href.includes('?')) {
 				for (let N of [2, 3]) {
-					for (let L of [0, 1, 2]) {
-						let r = new Rotor({ N, L, size })
+					for (let P of [0, 1, 2]) {
+						let r = new Rotor({ N, P, size })
 						for (let st = 0; st < sts.length; st++) {
 							let v =
-								`${L.toFixed(1)} ${sts[st | 0]}\n` +
+								`${P.toFixed(1)} ${sts[st | 0]}\n` +
 								`K:${r.K.toFixed()}\n` +
 								`${r.KK.toFixed(1)} ${r.KB.toFixed(1)}`
 							Draw(r, st, Canv(v))

@@ -4,14 +4,16 @@ let EPSI = (Number.EPSILON = 1 / (1 << 12))
 let atan, diff, diffAbs, cross, area
 
 function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, BP = 0.1, Tick: Tickn = 16, size }) {
-	Tickn = floor(min(Tickn * N * 2, 100) / N / 2) * N * 2
+	let PIN = PI / N
+	let N2 = N + N
+	// 建立旋转角
+	Tickn = floor(min(Tickn * N2, 100) / N2) * N2
 	let Tick_ = (this.Tick_ = [])
 	for (let i = 0; i <= Tickn; i++) Tick_.push((i / Tickn) * PI2)
 	let Tick = (this.Tick = [...Tick_])
 	Tick.length--
-	size = ceil(+size || min(size.clientWidth, size.clientHeight))
 
-	let PIN = PI / N
+	size = ceil(+size || min(size.clientWidth, size.clientHeight))
 	e ??= size / (2.3 * (P + N + 3)) // 偏心距
 	let R = e * N // 转子大节圆半径
 	let r = R - e // 曲轴小节圆半径
@@ -26,6 +28,11 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, BP = 0.1, Tick: Tickn = 16,
 		e * cos(T * N - PI) + (P + BP) * cos(T),
 		e * sin(T * N - PI) + (P + BP) * sin(T),
 	])
+	// 缸体腰线
+	let BQt = [...Array.seq(Tickn - Tickn / N2, Tickn - 1), ...Array.seq(0, Tickn / N2)]
+	// 缸体顶线
+	let BPT = Tst(1)
+	let BPt = [...Array.seq(Tick.binFind(BPT - PIN), Tick.binFind(BPT + PIN))]
 
 	// 转子型线、即缸体绕转子心的内包络线
 	let DD = null
@@ -35,7 +42,7 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, BP = 0.1, Tick: Tickn = 16,
 			let X = P * cos(B + T) - e * cos(B * N + T) - e * cos(T * (N - 1))
 			let Y = P * sin(B + T) - e * sin(B * N + T) + e * sin(T * (N - 1))
 			let A = atan(X, Y) // [0,PI2) C==0 沿T严格递增 [0,PI2] C>0 沿T循环严格递增
-			return [A, sqrt(X * X + Y * Y), X, Y, DD?.binFind(A, 0, true, -1)]
+			return [A, sqrt(X * X + Y * Y), X, Y, DD?.binFind(A, 0, -1)]
 		})
 		if (DD != (DD ??= [...bb])) continue
 		let S = []
@@ -72,18 +79,19 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, BP = 0.1, Tick: Tickn = 16,
 	// 工作容积，总容积，总体积
 	let V, K, VB, VV, KB, KK
 	{
-		let b = BB.slice(-Tickn / N / 2 - 1).concat(BB.slice(0, Tickn / N / 2 + 1))
-		let d = DD.slice(DD.binFind(PI2 - PIN, 0, true))
-		d = d.concat(DD.slice(0, DD.binFind(PIN, 0, true) + 1))
+		let b = BQt.map(t => BB[t])
+		let d = DD.slice(DD.binFind(PI2 - PIN, 0)).concat(DD.slice(0, DD.binFind(PIN, 0) + 1))
 		let v = area(b) - area(d.map(([A, D, X, Y]) => [X, Y]))
-		let t = Tst(1)
-		b = BB.slice(Tick.binFind(t - PIN, null, true), Tick.binFind(t + PIN, null, true) + 1)
-		d = d.map(([A, D]) => [e * cos(t * N) + D * cos(t + A), e * sin(t * N) + D * sin(t + A)])
+		b = BPt.map(t => BB[t])
+		d = d.map(([A, D]) => [
+			e * cos(BPT * N) + D * cos(BPT + A),
+			e * sin(BPT * N) + D * sin(BPT + A),
+		])
 		;(V = area(b) - area(d) - v), (K = V / v)
 		;(VB = area(BB)), (KB = VB / V)
 		;(VV = VB - area(DD.map(([A, D, X, Y]) => [X, Y]))), (KK = VV / V)
+		console.log(`Vmin ${v | 0}  Vmax ${V | 0}  K ${K.toFixed(1)}`)
 	}
-	console.log(`Vmin ${V | 0}  Vmax ${V | 0}  K ${K.toFixed(1)}`)
 	console.log(`Ktotal ${KK.toFixed(1)} Kblock ${KB.toFixed(1)}`)
 
 	Object.assign(this, { N, e, R, r, P, Q, BP, V, V, K, KK, KB, Tn, Tst })
@@ -193,14 +201,17 @@ atan = function (x, y) {
 diff = v => ((v %= PI2) > PI ? v - PI2 : v < -PI ? v + PI2 : v)
 diffAbs = v => ((v = abs(v) % PI2) > PI ? PI2 - v : v)
 
-Array.prototype.binFind = function (v, prop, at, epsi = EPSI) {
+Array.seq = function* (from, to) {
+	for (let i = from; i <= to; i++) yield i
+}
+Array.prototype.binFind = function (v, prop, epsi = EPSI, neg = false) {
 	let l = 0
 	for (let h = this.length - 1, m, c; l <= h; ) {
 		;(m = (l + h) >>> 1), (c = v - (prop != null ? this[m][prop] : this[m]))
 		if (c >= -epsi && c <= epsi) return m
 		c < 0 ? (h = m - 1) : (l = m + 1)
 	}
-	return at ? l : ~l
+	return neg ? ~l : l
 }
 cross = function (ax, ay, bx, by, cx, cy, dx, dy, co) {
 	let abc = (ax - cx) * (by - cy) - (ay - cy) * (bx - cx)
