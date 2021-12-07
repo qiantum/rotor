@@ -3,7 +3,7 @@ let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
 let atan, diff, diffAbs, cross, area
 
-function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16, size }) {
+function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, BP = 0.1, Tick: Tickn = 16, size }) {
 	Tickn = floor(min(Tickn * N * 2, 100) / N / 2) * N * 2
 	let Tick_ = (this.Tick_ = [])
 	for (let i = 0; i <= Tickn; i++) Tick_.push((i / Tickn) * PI2)
@@ -17,14 +17,14 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 	let r = R - e // 曲轴小节圆半径
 	P = e * (P + N + 2) // 顶半径
 	Q = e * (Q + N) // 腰半径
-	PC *= e // 缸体转子间隙
+	BP *= e // 缸体转子间隙
 	let Tn = n => (n * PI2) / N
 	let Tst = st => (st * PI) / (N - 1)
 
 	// 缸体型线
 	let BB = Tick_.map(T => [
-		e * cos(T * N - PI) + (P + PC) * cos(T),
-		e * sin(T * N - PI) + (P + PC) * sin(T),
+		e * cos(T * N - PI) + (P + BP) * cos(T),
+		e * sin(T * N - PI) + (P + BP) * sin(T),
 	])
 
 	// 转子型线、即缸体绕转子心的内包络线
@@ -46,7 +46,7 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 			t_--, (t %= DD.length) // 缸体每条线段
 			for (let T_ = t_, T1, T; T_ != t; T_ = T) {
 				let [A_, D_, X_, Y_] = DD[T_]
-				let [A, D, X, Y] = DD[(T = (T1 = T_ + 1) % DD.length)]
+				let [A, D, X, Y] = DD[(T = T1 = T_ + 1)] || DD[(T = 0)]
 				// 缸体线段角对应的转子连续线段，求交点和半径
 				let [SX, SY, abc, abd, cda, cdb] = cross(X_, Y_, X, Y, x_, y_, x, y)
 				if (T != t && cdb < -EPSI && T) S.push([1 / 0, 0, 0, 0, T]) //减半径长转子点
@@ -86,7 +86,7 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 	console.log(`Vmin ${V | 0}  Vmax ${V | 0}  K ${K.toFixed(1)}`)
 	console.log(`Ktotal ${KK.toFixed(1)} Kblock ${KB.toFixed(1)}`)
 
-	Object.assign(this, { N, e, R, r, P, Q, V, V, K, KK, KB, Tn, Tst })
+	Object.assign(this, { N, e, R, r, P, Q, BP, V, V, K, KK, KB, Tn, Tst })
 
 	this.$ = ({ canvas, centerx, centery }) => {
 		let $ = canvas.getContext('2d')
@@ -124,7 +124,7 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 			$$({ color: '#00f', ...style })
 			let X = $X(T) + P * cos(T + PIN),
 				Y = $Y(T) + P * sin(T + PIN)
-			PC && $.arc(X, Y, PC, 0, PI2)
+			BP && $.arc(X, Y, BP, 0, PI2)
 			$.moveTo(X, Y)
 			$.lineTo($X(T) + O * cos(T + PIN), $Y(T) + O * sin(T + PIN))
 			$$$()
