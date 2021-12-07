@@ -1,0 +1,82 @@
+<html>
+	<meta charset="utf-8" />
+	<style>
+		body {
+			margin: 0 0 0 5px;
+			background-color: #eee;
+			font-family: monospace;
+			font-size: 12px;
+		}
+		body * {
+			vertical-align: middle;
+		}
+		canvas {
+			margin: 5px;
+			background-color: #fff;
+		}
+		a {
+			text-decoration: none;
+			color: #33c;
+			margin-left: 1rem;
+			font-size: 1.2rem;
+		}
+		pre {
+			display: inline-block;
+		}
+	</style>
+	<body>
+		<nav>
+			<a href="?">参数对比</a>
+			<a href="?2">二角</a>
+			<a href="?3">三角</a>
+			<a href="?4">四角</a>
+			<a href="?5">五角</a>
+		</nav>
+		<script src="./rotoro.js"></script>
+		<script>
+			function Canv(text) {
+				let $ = document.createElement('pre')
+				$.appendChild(document.createTextNode(text))
+				document.body.appendChild($)
+				;($ = document.createElement('canvas')), ($.width = $.height = size)
+				document.body.appendChild($)
+				return $
+			}
+			let sts = ['I', 'C', 'P', 'E']
+			function Draw(rotor, st, canvas) {
+				let $ = rotor.$({ canvas })
+				let T = rotor.Tst(st)
+				$.RR(), $.r(), $.Rr(T), $.R(T)
+				$.DD(T), $.PN(T), $.QN(T)
+				$.CC()
+			}
+			let size = 360
+			if (!location.href.includes('?')) {
+				for (let N of [2, 3]) {
+					for (let L of [0, 1, 2]) {
+						let r = new Rotor({ N, L, size })
+						for (let st = 0; st < sts.length; st++) {
+							let v =
+								`${L.toFixed(1)} ${sts[st | 0]}\n` +
+								`K:${r.K.toFixed()}\n` +
+								`${r.KK.toFixed(1)} ${r.KC.toFixed(1)}`
+							Draw(r, st, Canv(v))
+							
+						}
+						document.body.appendChild(document.createElement('br'))
+					}
+				}
+			} else {
+				let N = location.search[1] | 0
+				if (!(N >= 2)) location.replace(location.href.replace(/[?].*/, ''))
+				let rotor = new Rotor({ N: +location.search[1], size })
+				let stsub = min(rotor.N * (rotor.N <= 3 ? 2 : 1), 8)
+				for (let st = 0; st < sts.length; ) {
+					Draw(rotor, st, Canv(sts[st | 0]))
+					if ((st = (Math.round(st * stsub) + 1) / stsub) % 1 == 0)
+						document.body.appendChild(document.createElement('br'))
+				}
+			}
+		</script>
+	</body>
+</html>
