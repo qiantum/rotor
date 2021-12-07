@@ -22,27 +22,27 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 	let Tst = st => (st * PI) / (N - 1)
 
 	// 缸体型线
-	let CC = Tick_.map(T => [
+	let BB = Tick_.map(T => [
 		e * cos(T * N - PI) + (P + PC) * cos(T),
 		e * sin(T * N - PI) + (P + PC) * sin(T),
 	])
 
 	// 转子型线、即缸体绕转子心的内包络线
 	let DD = null
-	for (let C of Tick) {
+	for (let B of Tick) {
 		// 缸体转动
-		let cc = Tick.map(T => {
-			let X = P * cos(C + T) - e * cos(C * N + T) - e * cos(T * (N - 1))
-			let Y = P * sin(C + T) - e * sin(C * N + T) + e * sin(T * (N - 1))
+		let bb = Tick.map(T => {
+			let X = P * cos(B + T) - e * cos(B * N + T) - e * cos(T * (N - 1))
+			let Y = P * sin(B + T) - e * sin(B * N + T) + e * sin(T * (N - 1))
 			let A = atan(X, Y) // [0,PI2) C==0 沿T严格递增 [0,PI2] C>0 沿T循环严格递增
 			return [A, sqrt(X * X + Y * Y), X, Y, DD?.binFind(A, 0, true, -1)]
 		})
-		if (DD != (DD ??= [...cc])) continue
+		if (DD != (DD ??= [...bb])) continue
 		let S = []
-		for (let ct = 0; ct < Tickn; ct++) {
+		for (let bt = 0; bt < Tickn; bt++) {
 			// 对缸体每条线段
-			let [a_, d_, x_, y_, t_] = cc[ct]
-			let [a, d, x, y, t] = cc[ct + 1] || cc[0]
+			let [a_, d_, x_, y_, t_] = bb[bt]
+			let [a, d, x, y, t] = bb[bt + 1] || bb[0]
 			t_--, (t %= DD.length) // 缸体每条线段
 			for (let T_ = t_, T1, T; T_ != t; T_ = T) {
 				let [A_, D_, X_, Y_] = DD[T_]
@@ -55,7 +55,7 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 				if (SX != null) S.push([atan(SX, SY), sqrt(SX * SX + SY * SY), SX, SY, T1]) //加交点
 			}
 		}
-		S.sort((a, b) => a[4] - b[4] || a[0] - b[0]) // 保持角度有序
+		S.sort((s1, s2) => s1[4] - s2[4] || s1[0] - s2[0]) // 保持角度有序
 		let t = 0 // 加减点
 		for (let s of S)
 			if (s[0] == 1 / 0) DD.splice(s[4] + t--, 1)
@@ -66,27 +66,27 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 			else if (D[0] - DD[t][0] > EPSI && abs(D[1] - DD[t][1]) > EPSI) DD[++t] = D
 		DD.length = ++t
 	}
-	DD[DD.push([...DD[0]]) - 1][0] += PI2
 	console.log(`DD in ${DD.length} details`)
+	DD[DD.push([...DD[0]]) - 1][0] += PI2
 
 	// 工作容积，总容积，总体积
-	let V, K, VC, VV, KC, KK
+	let V, K, VB, VV, KB, KK
 	{
-		let c = CC.slice(-Tickn / N / 2 - 1).concat(CC.slice(0, Tickn / N / 2 + 1))
+		let b = BB.slice(-Tickn / N / 2 - 1).concat(BB.slice(0, Tickn / N / 2 + 1))
 		let d = DD.slice(DD.binFind(PI2 - PIN, 0, true))
 		d = d.concat(DD.slice(0, DD.binFind(PIN, 0, true) + 1))
-		let v = area(c) - area(d.map(([A, D, X, Y]) => [X, Y]))
+		let v = area(b) - area(d.map(([A, D, X, Y]) => [X, Y]))
 		let t = Tst(1)
-		c = CC.slice(Tick.binFind(t - PIN, null, true), Tick.binFind(t + PIN, null, true) + 1)
+		b = BB.slice(Tick.binFind(t - PIN, null, true), Tick.binFind(t + PIN, null, true) + 1)
 		d = d.map(([A, D]) => [e * cos(t * N) + D * cos(t + A), e * sin(t * N) + D * sin(t + A)])
-		;(V = area(c) - area(d) - v), (K = V / v)
-		;(VC = area(CC)), (KC = VC / V)
-		;(VV = VC - area(DD.map(([A, D, X, Y]) => [X, Y]))), (KK = VV / V)
+		;(V = area(b) - area(d) - v), (K = V / v)
+		;(VB = area(BB)), (KB = VB / V)
+		;(VV = VB - area(DD.map(([A, D, X, Y]) => [X, Y]))), (KK = VV / V)
 	}
 	console.log(`Vmin ${V | 0}  Vmax ${V | 0}  K ${K.toFixed(1)}`)
-	console.log(`Ktotal ${KC.toFixed(1)} Kwhole ${KK.toFixed(1)}`)
+	console.log(`Ktotal ${KK.toFixed(1)} Kblock ${KB.toFixed(1)}`)
 
-	Object.assign(this, { N, e, R, r, P, Q, V, V, K, KK, KC, Tn, Tst })
+	Object.assign(this, { N, e, R, r, P, Q, V, V, K, KK, KB, Tn, Tst })
 
 	this.$ = ({ canvas, centerx, centery }) => {
 		let $ = canvas.getContext('2d')
@@ -155,10 +155,10 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 			$$$()
 		}
 		// 画缸体
-		function $CC(style) {
+		function $BB(style) {
 			$$({ color: '#00f', ...style })
 			let to
-			for (let [X, Y] of CC) (to = to ? $.lineTo : $.moveTo).call($, $x + X, $y + Y)
+			for (let [X, Y] of BB) (to = to ? $.lineTo : $.moveTo).call($, $x + X, $y + Y)
 			$$$()
 		}
 		// 画转子
@@ -180,7 +180,7 @@ function Rotor({ N = 2, e, P = (N - 1) * 0.8, Q = P, PC = 0.1, Tick: Tickn = 16,
 			PN: $PN,
 			QN: $QN,
 			QQ: $QQ,
-			CC: $CC,
+			BB: $BB,
 			DD: $DD,
 		}
 	}
