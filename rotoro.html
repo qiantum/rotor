@@ -2,7 +2,7 @@
 	<meta charset="utf-8" />
 	<style>
 		body {
-			margin: 0 0 0 5px;
+			margin: 0.4rem;
 			background-color: #eee;
 		}
 		body * {
@@ -15,7 +15,7 @@
 			all: unset;
 			display: inline-block;
 			position: relative;
-			margin: 5px;
+			margin: 0.4rem;
 		}
 		figure div {
 			position: absolute;
@@ -81,10 +81,12 @@
 				if (!(N >= 2)) location.replace(location.href.replace(/[?].*/, ''))
 				let rotor = new Rotor({ N: +location.search[1], size })
 				let stsub = min(rotor.N * (rotor.N <= 3 ? 2 : 1), 8)
-				for (let st = 0; st < sts.length; ) {
-					Draw(rotor, st, Canv(sts[st | 0]))
-					if ((st = (Math.round(st * stsub) + 1) / stsub) % 1 == 0)
-						document.body.appendChild(document.createElement('br'))
+				for (let st = 0; st < 1; st = (Math.round(st * stsub) + 1) / stsub) {
+					for (; st < sts.length; st++) {
+						Draw(rotor, st, Canv(sts[st | 0]))
+					}
+					st -= sts.length
+					document.body.appendChild(document.createElement('br'))
 				}
 			}
 			function Canv(...texts) {

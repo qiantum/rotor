@@ -4,23 +4,23 @@ let EPSI = (Number.EPSILON = 1 / (1 << 12))
 let atan, diff, diffAbs, cross, area
 
 function Rotor({
-	N, // 转角数
+	N, // 顶角数
 	E, // 偏心距
-	P = (N - 1) * 0.8, // 转子角半径 / 偏心距
+	P = (N - 1) * 0.8, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
 	BP = 0.1, // 缸体转子间隙 / 偏心距
-	Tick: Tickn = 16, // 每角旋转步进
+	Tick: Tickn = 16, // 顶间旋转步进
 	Rfast, // 快速计算转子型线
 	size, // 预估像素
 }) {
 	let PIN = PI / N
 	let N2 = N + N
-	Tickn = floor(min(Tickn * N2, 160) / N2) * N2 // 每角旋转步进
+	Tickn = floor(min(Tickn * N2, 160) / N2) * N2 // 顶间旋转步进
 	size = ceil(+size || min(size.clientWidth, size.clientHeight))
 	E ??= floor(size / (2.3 * (P + N + 3))) // 偏心距
 	let G = E * N // 转子大节圆半径
 	let g = G - E // 曲轴小节圆半径
-	P = E * (P + N + 2) // 转子角半径
+	P = E * (P + N + 2) // 转子顶半径
 	Q = E * (Q + N) // 转子腰半径
 	BP *= E // 缸体转子间隙
 
@@ -166,7 +166,7 @@ function Rotor({
 		function $GG(style) {
 			$$({ color: '#999', opa: '5', ...style }), $.arc($x, $y, G + E, 0, PI2), $$$()
 		}
-		// 画转子角
+		// 画转子顶
 		function $P(T, n = 0, O, style) {
 			T += Tn(n)
 			$$({ color: '#00f', ...style })
@@ -184,7 +184,7 @@ function Rotor({
 			$.lineTo($X(T) + O * cos(T), $Y(T) + O * sin(T))
 			$$$()
 		}
-		// 画转子全部角
+		// 画转子全部顶
 		function $PN(T, O = G, style) {
 			for (let n = 0; n < N; n++) $P(T, n, O?.[n] ?? O?.[O?.length - 1] ?? O, style)
 		}
