@@ -120,21 +120,23 @@ function Rotor({
 	console._`R in ${RR.length - 1} details`
 
 	// 工作容积，总容积，总体积
-	let V, K, VB, VV, KB, KK
+	let V, K, VV, KK, VB, KB
 	{
 		let v = area(BQt.map(t => BB[t])) - area(R(0, BQt))
 		V = area(BPt.map(t => BB[t])) - area(R(TBP, BQt)) - v
 		VB = area(BB)
 		VV = VB - area(R(0))
-		;(K = V / v), (KB = VB / V), (KK = VV / V)
+		;(K = V / v), (KK = VV / V), (KB = VB / V)
 		console._`Vmin ${v}{} Vmax ${V}{} K ${K}{1}  KK ${KK}{1} KB ${KB}{1}`
 	}
 
-	Object.assign(this, { N, E, G, g, P, Q, BP, R, V, V, K, KK, KB, Tn, Tst, size })
+	Object.assign(this, { N, E, G, g, P, Q, BP, R, V, K, KK, KB, Tn, Tst, size })
 
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')
-		if (param) param.textContent = _`N${N}{} E${E}{}\nP${P}{} Q${Q}{} BP${BP}{1}`
+		if (param)
+			param.textContent =
+				_`N${N}{} E${E}{}\nP${P / E}{1} Q${Q / E}{1}\n` + _`K${K}{} ${KK}{1} ${KB}{1}`
 
 		let $x = midx ?? canvas.clientWidth / 2
 		let $y = midy ?? canvas.clientHeight / 2

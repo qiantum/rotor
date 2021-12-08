@@ -34,7 +34,8 @@
 		pre {
 			margin: 0;
 		}
-		pre:nth-child(2), pre:nth-child(4) {
+		pre:nth-child(2),
+		pre:nth-child(4) {
 			text-align: right;
 		}
 		a {
@@ -70,8 +71,7 @@
 					for (let P of [0, 1, 2]) {
 						let r = new Rotor({ N, P, size })
 						for (let st = 0; st < sts.length; st++) {
-							let v = _`${P}{1} ${sts[st | 0]}\nK:${r.K}{}\n${r.KK}{1} ${r.KB}{1}`
-							Draw(r, st, Canv(v))
+							Draw(r, st, Canv(`${sts[st | 0]}`, _`K${r.K}{1}`))
 						}
 						document.body.appendChild(document.createElement('br'))
 					}
