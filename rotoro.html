@@ -4,24 +4,43 @@
 		body {
 			margin: 0 0 0 5px;
 			background-color: #eee;
-			font-family: monospace;
-			font-size: 12px;
 		}
 		body * {
 			vertical-align: middle;
 		}
-		canvas {
+		figure:first-of-type {
+			display: none;
+		}
+		figure {
+			all: unset;
+			display: inline-block;
+			position: relative;
 			margin: 5px;
+		}
+		figure div {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 10;
+			display: grid;
+			grid-template: auto / auto auto;
+			place-content: space-between space-between;
+		}
+		canvas {
 			background-color: #fff;
+		}
+		pre {
+			margin: 0;
+		}
+		pre:nth-child(2), pre:nth-child(4) {
+			text-align: right;
 		}
 		a {
 			text-decoration: none;
 			color: #33c;
 			margin-left: 1rem;
-			font-size: 1.2rem;
-		}
-		pre {
-			display: inline-block;
 		}
 	</style>
 	<body>
@@ -32,34 +51,26 @@
 			<a href="?4">四角</a>
 			<a href="?5">五角</a>
 		</nav>
+		<figure>
+			<canvas></canvas>
+			<div>
+				<pre></pre>
+				<pre></pre>
+				<pre></pre>
+				<pre></pre>
+			</div>
+		</figure>
+		<script src="./format.js"></script>
 		<script src="./rotoro.js"></script>
-		<script>
-			function Canv(text) {
-				let $ = document.createElement('pre')
-				$.appendChild(document.createTextNode(text))
-				document.body.appendChild($)
-				;($ = document.createElement('canvas')), ($.width = $.height = size)
-				document.body.appendChild($)
-				return $
-			}
+		<script onload>
 			let sts = ['I', 'C', 'P', 'E']
-			function Draw(rotor, st, canvas) {
-				let $ = rotor.$({ canvas })
-				let T = rotor.Tst(st)
-				$.RR(), $.r(), $.Rr(T), $.R(T)
-				$.DD(T), $.PN(T), $.QN(T)
-				$.BB()
-			}
 			let size = 360
 			if (!location.href.includes('?')) {
 				for (let N of [2, 3]) {
 					for (let P of [0, 1, 2]) {
 						let r = new Rotor({ N, P, size })
 						for (let st = 0; st < sts.length; st++) {
-							let v =
-								`${P.toFixed(1)} ${sts[st | 0]}\n` +
-								`K:${r.K.toFixed()}\n` +
-								`${r.KK.toFixed(1)} ${r.KB.toFixed(1)}`
+							let v = _`${P}{1} ${sts[st | 0]}\nK:${r.K}{}\n${r.KK}{1} ${r.KB}{1}`
 							Draw(r, st, Canv(v))
 						}
 						document.body.appendChild(document.createElement('br'))
@@ -75,6 +86,23 @@
 					if ((st = (Math.round(st * stsub) + 1) / stsub) % 1 == 0)
 						document.body.appendChild(document.createElement('br'))
 				}
+			}
+			function Canv(...texts) {
+				let fig = document.createElement('figure')
+				fig.innerHTML = document.querySelector('figure').innerHTML
+				let canvas = fig.querySelector('canvas')
+				canvas.width = canvas.height = size
+				let text = fig.querySelectorAll('pre')
+				text.forEach((t, i) => (t.textContent = texts[i] || ''))
+				document.body.appendChild(fig)
+				return { canvas, param: text[3] }
+			}
+			function Draw(rotor, st, canv) {
+				let $ = rotor.$(canv)
+				let T = rotor.Tst(st)
+				$.GG(), $.g(), $.Gg(T), $.G(T)
+				$.RR(T), $.PN(T), $.QN(T)
+				$.BB()
 			}
 		</script>
 	</body>

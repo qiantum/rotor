@@ -132,10 +132,10 @@ function Rotor({
 
 	Object.assign(this, { N, E, G, g, P, Q, BP, R, V, V, K, KK, KB, Tn, Tst, size })
 
-	this.$ = ({ canvas, midx, midy, text }) => {
+	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')
-		let $param = (text.textContent = _`N${N}{} E${E}{}\nP${P}{} Q${Q}{} BP${BP}{1}`)
-	
+		if (param) param.textContent = _`N${N}{} E${E}{}\nP${P}{} Q${Q}{} BP${BP}{1}`
+
 		let $x = midx ?? canvas.clientWidth / 2
 		let $y = midy ?? canvas.clientHeight / 2
 		let $X = T => $x + E * cos(T * N) // 转子心X
@@ -162,7 +162,7 @@ function Rotor({
 		}
 		// 画转子大圆凸包
 		function $GG(style) {
-			$$({ color: '#999', opa: '7', ...style }), $.arc($x, $y, G + E, 0, PI2), $$$()
+			$$({ color: '#999', opa: '5', ...style }), $.arc($x, $y, G + E, 0, PI2), $$$()
 		}
 		// 画转子角
 		function $P(T, n = 0, O, style) {
@@ -214,7 +214,6 @@ function Rotor({
 			$$$()
 		}
 		return {
-			param: $param,
 			x: $x,
 			y: $y,
 			g: $g,
