@@ -36,11 +36,11 @@ function Rotor({
 		E * sin(T * N - PI) + (P + BP) * sin(T),
 	])
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	// 缸体腰线
-	let BQt = [...Array.seq(Tickn - Tickn / N2, Tickn - 1), ...Array.seq(0, Tickn / N2)]
 	// 缸体顶线
 	let TBP = Tst(1)
 	let BPt = [...Array.seq(Tick.binFind(TBP - PIN), Tick.binFind(TBP + PIN))]
+	// 缸体腰线
+	let BQt = [...Array.seq(Tickn - Tickn / N2, Tickn - 1), ...Array.seq(0, Tickn / N2)]
 
 	// 缸体对转子旋转
 	function* BTR(TT, BT) {
@@ -55,8 +55,8 @@ function Rotor({
 	// 转子型线、即缸体绕转子心的内包络线
 	let R
 	if (Rfast) {
-		let dot = T => BTR([T], BQt.map(Tick.At()))
-		R = MinDot(0, Tickn, dot, (T, t) => (t % (Tickn / N2) ? null : t % (Tickn / N) ? P : Q))
+		let dot = BTR(Tick, BQt.map(Tick.At()))
+		R = MinDot(Tick_.keys(), dot, (T, t) => (t % (Tickn / N2) ? null : t % (Tickn / N) ? P : Q))
 	} else {
 		let S = [...BTR(Tick, [0])]
 		for (let B of Tick.slice(1)) {
@@ -67,11 +67,11 @@ function Rotor({
 			// 对缸体每段
 			for (let bt of Tick.keys()) {
 				let [a_, r_, x_, y_, t_] = bb[bt]
-				let [a, r, x, y, t] = bb[bt + 1] || bb[0]
+				let [a, r, x, y, t] = bb[bt + 1] ?? bb[0]
 				t_--, (t %= S.length) // 对应转子连续段
 				for (let T_ = t_, T1, T; T_ != t; T_ = T) {
 					let [A_, R_, X_, Y_] = S[T_]
-					let [A, R, X, Y] = S[(T = T1 = T_ + 1)] || S[(T = 0)]
+					let [A, R, X, Y] = S[(T = T1 = T_ + 1)] ?? S[(T = 0)]
 					// 求交点和半径
 					let [SX, SY, abc, abd, cda, cdb] = cross(X_, Y_, X, Y, x_, y_, x, y)
 					if (T != t && cdb < -EPSI && T) M.push([1 / 0, 0, 0, 0, T]) // 去掉长半径转子点
@@ -223,23 +223,23 @@ function Rotor({
 		}
 	}
 
-	// 步进点集求最内包络线
-	function MinDot(t0, t9, dot, fix) {
-		let M = new Array(t9 + 1).fill(1 / 0)
-		for (let t = t0; t <= t9; t++)
-			for (let [A, D] of dot(Tick_[t], t)) {
-				let a = ceil((t9 * A) / PI2)
-				if (a >= t0 && a <= t9 && D < M[a]) M[a] = D
-			}
-		for (let t = t0; t < t9; t++) M[t] = min(M[t], M[t + 1]) * 0.375 + max(M[t], M[t + 1]) * 0.625
-		for (let t = t0, d; t <= t9; t++) if ((d = fix(Tick_[t], t)) != null) M[t] = d
+	// 步进点集求内包络线
+	function MinDot(tt, dot, fix) {
+		tt.values ?? (tt = [...tt])
+		let M = new Array(Tickn + 1).fill(1 / 0)
+		for (let [A, D, a] of dot) M[(a = ceil((Tickn * A) / PI2))] = min(M[a], D)
+		M[Tickn] = M[0]
 
-		let XY = function* (T, tt = Array.seq(t0, t9)) {
+		for (let t of tt)
+			if (t < Tickn) M[t] = min(M[t], M[t + 1]) * 0.375 + max(M[t], M[t + 1]) * 0.625
+		for (let t of tt) if ((d = fix(Tick[t], t)) != null) M[t] = d
+
+		let XY = function* (T, ttt = tt) {
 			let x = E * cos(T * N)
 			let y = E * sin(T * N)
-			for (let t of tt) yield [x + M[t] * cos(T + Tick_[t]), y + M[t] * sin(T + Tick_[t])]
+			for (let t of ttt) yield [x + M[t] * cos(T + Tick_[t]), y + M[t] * sin(T + Tick_[t])]
 		}
-		return (XY.count = M.length - 1), XY
+		return (XY.count = tt.length - 1), XY
 	}
 }
 
