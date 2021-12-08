@@ -80,7 +80,7 @@
 				let N = location.search[1] | 0
 				if (!(N >= 2)) location.replace(location.href.replace(/[?].*/, ''))
 				let rotor = new Rotor({ N: +location.search[1], size })
-				let stsub = min(rotor.N * (rotor.N <= 3 ? 2 : 1), 8)
+				let stsub = min(rotor.N << max(4 - rotor.N, 0), 8)
 				for (let st = 0; st < 1; st = (Math.round(st * stsub) + 1) / stsub) {
 					for (; st < sts.length; st++) {
 						Draw(rotor, st, Canv(sts[st | 0]))

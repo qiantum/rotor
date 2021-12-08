@@ -10,7 +10,7 @@ function Rotor({
 	Q = P, // 转子腰半径 / 偏心距
 	BP = 0.1, // 缸体转子间隙 / 偏心距
 	Tick: Tickn = 16, // 顶间旋转步进
-	Rfast, // 快速计算转子型线
+	Rfast = true, // 快速计算转子型线
 	size, // 预估像素
 }) {
 	let PIN = PI / N
@@ -26,7 +26,7 @@ function Rotor({
 
 	let Tn = n => (n * PI2) / N
 	let Tst = st => (st * PI) / (N - 1)
-	let tT = (T, int = round) => int((Tickn * T) / PI2) % Tickn // [0,Tickn)
+	// 旋转步进角
 	let Tick_ = (this.Tick_ = [...Array.seq(0, Tickn)].map(t => (t / Tickn) * PI2))
 	let Tick = (this.Tick = Tick_.slice(0, Tickn))
 
@@ -42,65 +42,55 @@ function Rotor({
 	let TBP = Tst(1)
 	let BPt = [...Array.seq(Tick.binFind(TBP - PIN), Tick.binFind(TBP + PIN))]
 
-	// 转子型线、即缸体绕转子心的内包络线
-	let R, RR
-	if (Rfast) {
-		RR = new Array(Tickn).fill(P)
-		for (let T of Tick)
-			for (let B of BQt.map(t => Tick[t])) {
+	// 缸体对转子旋转
+	function* BTR(TT, BT) {
+		for (let T of TT)
+			for (let B of BT) {
 				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(T * (N - 1))
 				let Y = P * sin(B + T) - E * sin(B * N + T) + E * sin(T * (N - 1))
-				let t = tT(atan(X, Y), ceil)
-				RR[t] = min(RR[t], sqrt(X * X + Y * Y))
+				let A = atan(X, Y) // [0,PI2) B==0 沿T严格递增 B>0 沿T循环严格递增
+				yield [A, sqrt(X * X + Y * Y), X, Y]
 			}
-		RR.push(Q)
-		for (let t = 0; t < Tickn; t++)
-			if (t % (Tickn / N2) == 0) RR[t] = t % (Tickn / N) == 0 ? Q : P
-			else RR[t] = min(RR[t], RR[t + 1]) * 0.375 + max(RR[t], RR[t + 1]) * 0.625
-
-		R = function* (T, rt = Array.seq(0, Tickn)) {
-			let x = E * cos(T * N)
-			let y = E * sin(T * N)
-			for (let t of rt) yield [x + RR[t] * cos(T + Tick_[t]), y + RR[t] * sin(T + Tick_[t])]
-		}
+	}
+	// 转子型线、即缸体绕转子心的内包络线
+	let R
+	if (Rfast) {
+		let dot = T => BTR([T], BQt.map(Tick.At()))
+		R = MinDot(0, Tickn, dot, (T, t) => (t % (Tickn / N2) ? null : t % (Tickn / N) ? P : Q))
 	} else {
-		for (let B of Tick) {
+		let S = [...BTR(Tick, [0])]
+		for (let B of Tick.slice(1)) {
 			// 缸体转动
-			let bb = Tick.map(T => {
-				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(T * (N - 1))
-				let Y = P * sin(B + T) - E * sin(B * N + T) + E * sin(T * (N - 1))
-				let A = atan(X, Y) // [0,PI2) C==0 沿T严格递增 [0,PI2] C>0 沿T循环严格递增
-				return [A, sqrt(X * X + Y * Y), X, Y, RR?.binFind(A, 0, -1)]
-			})
-			if (RR != (RR ??= [...bb])) continue
-			let S = []
+			let bb = [...BTR(Tick, [B])]
+			bb.forEach(b => (b[4] = S.binFind(b[0], 0, -1)))
+			let M = []
 			// 对缸体每段
-			for (let bt = 0; bt < Tickn; bt++) {
+			for (let bt of Tick.keys()) {
 				let [a_, r_, x_, y_, t_] = bb[bt]
 				let [a, r, x, y, t] = bb[bt + 1] || bb[0]
-				t_--, (t %= RR.length) // 对应转子连续段
+				t_--, (t %= S.length) // 对应转子连续段
 				for (let T_ = t_, T1, T; T_ != t; T_ = T) {
-					let [A_, R_, X_, Y_] = RR[T_]
-					let [A, R, X, Y] = RR[(T = T1 = T_ + 1)] || RR[(T = 0)]
+					let [A_, R_, X_, Y_] = S[T_]
+					let [A, R, X, Y] = S[(T = T1 = T_ + 1)] || S[(T = 0)]
 					// 求交点和半径
 					let [SX, SY, abc, abd, cda, cdb] = cross(X_, Y_, X, Y, x_, y_, x, y)
-					if (T != t && cdb < -EPSI && T) S.push([1 / 0, 0, 0, 0, T]) // 去掉长半径转子点
-					if (T_ == t_ && abc > EPSI) S.push([a_, r_, x_, y_, T1]) // 短半径缸体点
-					if (T == t && abd > EPSI) S.push([a, r, x, y, T1]) // 短半径缸体点
-					if (SX != null) S.push([atan(SX, SY), sqrt(SX * SX + SY * SY), SX, SY, T1]) //交点
+					if (T != t && cdb < -EPSI && T) M.push([1 / 0, 0, 0, 0, T]) // 去掉长半径转子点
+					if (T_ == t_ && abc > EPSI) M.push([a_, r_, x_, y_, T1]) // 短半径缸体点
+					if (T == t && abd > EPSI) M.push([a, r, x, y, T1]) // 短半径缸体点
+					if (SX != null) M.push([atan(SX, SY), sqrt(SX * SX + SY * SY), SX, SY, T1]) //交点
 				}
 			}
-			S.sort((s1, s2) => s1[4] - s2[4] || s1[0] - s2[0]) // 保持角度有序
+			M.sort((s1, s2) => s1[4] - s2[4] || s1[0] - s2[0]) // 保持角度有序
 			let t = 0 // 加减点
-			for (let s of S)
-				if (s[0] == 1 / 0) RR.splice(s[4] + t--, 1)
-				else RR.splice(s[4] + t++, 0, s), s.length--
-			RR[RR.push([...RR[0]]) - 1][0] += PI2 // 闭合
+			for (let m of M)
+				if (m[0] == 1 / 0) S.splice(m[4] + t--, 1)
+				else S.splice(m[4] + t++, 0, m), m.length--
+			S[S.push([...S[0]]) - 1][0] += PI2 // 闭合
 			t = 0 // 合并重合点
-			for (let R of RR)
-				if (R[0] < RR[t][0]) throw 'err a'
-				else if (R[0] - RR[t][0] > EPSI && abs(R[1] - RR[t][1]) > EPSI) RR[++t] = R
-			RR.length = ++t
+			for (let R of S)
+				if (R[0] < S[t][0]) throw 'err a'
+				else if (R[0] - S[t][0] > EPSI && abs(R[1] - S[t][1]) > EPSI) S[++t] = R
+			S.length = ++t
 		}
 
 		R = function* (T, rt = Array.seq(0, Tickn)) {
@@ -109,24 +99,25 @@ function Rotor({
 			if (tt == null) return
 			let x = E * cos(T * N)
 			let y = E * sin(T * N)
-			let r = RR.binFind(Tick_[tt], 0)
+			let r = S.binFind(Tick_[tt], 0)
 			for (let t of s)
 				do
-					for (let A, tT = Tick_[t] + (tt > t && PI2); (A = RR[r]?.[0]) <= tT; r++)
-						yield [x + RR[r][1] * cos(T + A), y + RR[r][1] * sin(T + A)]
+					for (let A, tT = Tick_[t] + (tt > t && PI2); (A = S[r]?.[0]) <= tT; r++)
+						yield [x + S[r][1] * cos(T + A), y + S[r][1] * sin(T + A)]
 				while (tt > (tt = t) && !(r = 0))
 		}
+		R.count = S.length - 1
 	}
-	console._`R in ${RR.length - 1} details`
+	console._`R in ${R.count} details`
 
 	// 工作容积，总容积，总体积
 	let V, K, VV, KK, VB, KB
 	{
-		let v = area(BQt.map(t => BB[t])) - area(R(0, BQt))
-		V = area(BPt.map(t => BB[t])) - area(R(TBP, BQt)) - v
+		let v = area(BQt.map(BB.At())) - area(R(0, BQt))
+		V = area(BPt.map(BB.At())) - area(R(TBP, BQt)) - v
 		VB = area(BB)
 		VV = VB - area(R(0))
-		;(K = V / v), (KK = VV / V), (KB = VB / V)
+		;(K = V / v + 1), (KK = VV / V), (KB = VB / V)
 		console._`Vmin ${v}{} Vmax ${V}{} K ${K}{1}  KK ${KK}{1} KB ${KB}{1}`
 	}
 
@@ -186,11 +177,11 @@ function Rotor({
 		}
 		// 画转子全部顶
 		function $PN(T, O = G, style) {
-			for (let n = 0; n < N; n++) $P(T, n, O?.[n] ?? O?.[O?.length - 1] ?? O, style)
+			for (let n = 0; n < N; n++) $P(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画转子全部腰
 		function $QN(T, O = [0, G], style) {
-			for (let n = 0; n < N; n++) $Q(T, n, O?.[n] ?? O?.[O?.length - 1] ?? O, style)
+			for (let n = 0; n < N; n++) $Q(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画转子腰凸包
 		function $QQ(style) {
@@ -231,6 +222,25 @@ function Rotor({
 			RR: $RR,
 		}
 	}
+
+	// 步进点集求最内包络线
+	function MinDot(t0, t9, dot, fix) {
+		let M = new Array(t9 + 1).fill(1 / 0)
+		for (let t = t0; t <= t9; t++)
+			for (let [A, D] of dot(Tick_[t], t)) {
+				let a = ceil((t9 * A) / PI2)
+				if (a >= t0 && a <= t9 && D < M[a]) M[a] = D
+			}
+		for (let t = t0; t < t9; t++) M[t] = min(M[t], M[t + 1]) * 0.375 + max(M[t], M[t + 1]) * 0.625
+		for (let t = t0, d; t <= t9; t++) if ((d = fix(Tick_[t], t)) != null) M[t] = d
+
+		let XY = function* (T, tt = Array.seq(t0, t9)) {
+			let x = E * cos(T * N)
+			let y = E * sin(T * N)
+			for (let t of tt) yield [x + M[t] * cos(T + Tick_[t]), y + M[t] * sin(T + Tick_[t])]
+		}
+		return (XY.count = M.length - 1), XY
+	}
 }
 
 atan = function (x, y) {
@@ -240,6 +250,9 @@ atan = function (x, y) {
 diff = v => ((v %= PI2) > PI ? v - PI2 : v < -PI ? v + PI2 : v)
 diffAbs = v => ((v = abs(v) % PI2) > PI ? PI2 - v : v)
 
+Array.prototype.At = function () {
+	return this.at.bind(this)
+}
 Array.seq = function* (from, to) {
 	for (let i = from; i <= to; i++) yield i
 }
@@ -252,6 +265,7 @@ Array.prototype.binFind = function (v, prop, epsi = EPSI, neg) {
 	}
 	return neg ? ~l : l
 }
+
 cross = function (ax, ay, bx, by, cx, cy, dx, dy, co) {
 	let abc = (ax - cx) * (by - cy) - (ay - cy) * (bx - cx)
 	let abd = (ax - dx) * (by - dy) - (ay - dy) * (bx - dx)
