@@ -44,13 +44,16 @@ function Rotor({
 	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TQ(n)) // 转子腰X
 	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TQ(n)) // 转子腰X
 
+	// 转子顶间腰线
+	let PPt = [...Array.seq(-tPQ, tPQ, tickn)]
+
 	// 缸体型线  E*cos(T*N-PI) + (P+BP)*cos(T), E*cos(T*N-PI) + (P+BP)*cos(T)
 	let BB = Tick_.map(T => [PX(T - TPQ, 0, P + BP), PY(T - TPQ, 0, P + BP)])
 	// 缸体步进角，非均匀
 	let BT = BB.map(([X, Y]) => atan(X, Y))
 	BT[BT.length - 1] = PI2
 	// 缸体腰线、顶线步进
-	let BQt = [...Array.seq(-tPQ, tPQ, tickn)]
+	let BQt = PPt
 	let BPt = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)]
 	// 缸体腰线、顶线步进角
 	let BQT = BQt.map(BT.At())
@@ -82,8 +85,8 @@ function Rotor({
 	// 工作容积，总容积，总体积
 	let V, K, VV, KK, VB, KB
 	{
-		let v = area(BQt.map(BB.At())) - area(R(0, BQt))
-		V = area(BPt.map(BB.At())) - area(R(TS(1), BQt)) - v
+		let v = area(BQt.map(BB.At())) - area(R(0, PPt))
+		V = area(BPt.map(BB.At())) - area(R(TS(1), PPt)) - v
 		VB = area(BB)
 		VV = VB - area(R(0))
 		;(K = V / v + 1), (KK = VV / V), (KB = VB / V)
@@ -96,7 +99,7 @@ function Rotor({
 	// 冲程区
 	let SS = BSt.map((BSt, s) => {
 		function* RR(T) {
-			for (let [X, Y] of R(T, BQt)) yield [atan(X, Y), dist(X, Y), X, Y]
+			for (let [X, Y] of R(T, PPt)) yield [atan(X, Y), dist(X, Y), X, Y]
 		}
 		function* TT() {
 			for (let t of Array.seq(tS(s), tS(s + 1), tickn, true)) yield RR(Tick_[t])
@@ -176,10 +179,11 @@ function Rotor({
 			$$$()
 		}
 		// 画转子
-		function $RR(T, style) {
+		function $RR(T, pp, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of R(T)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of R(T, pp ? PPt : undefined))
+				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画冲程区
@@ -196,28 +200,28 @@ function Rotor({
 	}
 
 	// 点集求内包络线 dots:[[ [A, R] ]] mt:正向步进
-	function MinDot(dots, fix, TT = Tick_, mt = Tick_.keys()) {
+	function MinDot(dots, fix, TT = Tick_, tt = Tick_.keys()) {
 		let M = new Array(tickn).fill(size + size)
 		for (let dot of dots)
 			for (let [A, R] of dot) {
 				let t = (TT == Tick_ ? ceil((tickn * A) / PI2) : A.bfind(TT, null, 1, 0)) % tickn
 				M[t] = min(M[t], R)
 			}
-		mt.values ?? (mt = [...mt])
-		M[mt[0]] == size + size && (M[mt[0]] = M[(mt[0] + 1) % tickn])
-		M[(mt.at(-1) + 1) % tickn] == size + size && (M[(mt.at(-1) + 1) % tickn] = M[mt.at(-1)])
+		tt.values ?? (tt = [...tt])
+		M[tt[0]] == size + size && (M[tt[0]] = M[(tt[0] + 1) % tickn])
+		M[(tt.at(-1) + 1) % tickn] == size + size && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
 		M.close()
-		for (let t of mt)
+		for (let t of tt)
 			if (t < tickn) M[t] = min(M[t], M[t + 1]) * 0.375 + max(M[t], M[t + 1]) * 0.625
-		if (fix) for (let t of mt) if ((d = fix(t, TT[t])) != null) M[t] = d
+		if (fix) for (let t of tt) if ((d = fix(t, TT[t])) != null) M[t] = d
 
-		function* XY(T, mtt = mt, x = GX(T), y = GY(T)) {
-			for (let t of mtt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
+		function* XY(T, ttt = tt, x = GX(T), y = GY(T)) {
+			for (let t of ttt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
 		}
-		return (XY.count = mt.length - 1), XY
+		return (XY.count = tt.length - 1), XY
 	}
 	// 正向曲线集求内包络线 curves:[[ [A, R, X, Y] ]] mt:可闭合
-	function MinCurve(curves, __, mt = Tick_.keys()) {
+	function MinCurve(curves, __, tt = Tick_.keys()) {
 		let M
 		for (let cc of curves) {
 			cc.values ?? (cc = [...cc])
@@ -251,17 +255,17 @@ function Rotor({
 				else if (m[0] - M[i][0] > EPSI && abs(m[1] - M[i][1]) > EPSI) M[++i] = m
 			M.length = ++i
 		}
-		mt.values ?? (mt = [...mt])
-		function* XY(T, mtt = mt, x = GX(T), y = GY(T)) {
-			mtt = mtt.values?.() ?? mtt
-			let t = mtt.next().value
+		tt.values ?? (tt = [...tt])
+		function* XY(T, ttt = tt, x = GX(T), y = GY(T)) {
+			ttt = ttt.values?.() ?? ttt
+			let t = ttt.next().value
 			if (t == null) return
 			let m = Tick_[t].binFind(M, 0)
-			for (let tt of mtt)
+			for (let t_ of ttt)
 				do
-					for (let A, TT = Tick_[tt] + (t > tt && PI2); (A = M[m]?.[0]) <= TT; m++)
+					for (let A, T_ = Tick_[t_] + (t > t_ && PI2); (A = M[m]?.[0]) <= T_; m++)
 						yield [x + M[m][1] * cos(T + A), y + M[m][1] * sin(T + A)]
-				while (t > (t = tt) && !(m = 0))
+				while (t > (t = t_) && !(m = 0))
 		}
 		return (XY.count = M.length - 1), XY
 	}

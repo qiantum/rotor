@@ -8,6 +8,9 @@
 		body * {
 			vertical-align: middle;
 		}
+		main {
+			white-space: nowrap;
+		}
 		figure:first-of-type {
 			display: none;
 		}
@@ -52,18 +55,21 @@
 			<a href="?4">四角</a>
 			<a href="?5">五角</a>
 		</nav>
-		<figure>
-			<canvas></canvas>
-			<div>
-				<pre></pre>
-				<pre></pre>
-				<pre></pre>
-				<pre></pre>
-			</div>
-		</figure>
+		<main>
+			<figure>
+				<canvas></canvas>
+				<div>
+					<pre></pre>
+					<pre></pre>
+					<pre></pre>
+					<pre></pre>
+				</div>
+			</figure>
+		</main>
 		<script src="./format.js"></script>
 		<script src="./rotoro.js"></script>
 		<script onload>
+			let main = document.querySelector('main')
 			let sname = ['I', 'C', 'P', 'E']
 			let scolor = ['#c3f6c3', '#ccf', '#fcc', '#ccc']
 			let size = 360
@@ -74,41 +80,50 @@
 				let ssub = min(rotor.N << max(4 - rotor.N, 0), 8)
 				for (let s = 0; s < 1; s = (Math.round(s * ssub) + 1) / ssub) {
 					for (; s < sname.length; s++) {
-						Draw(rotor, s, Canv(sname[s | 0]))
+						Draw(rotor, s, Canv(`${sname[s | 0]}${Math.round((s % 1) * ssub)}`), true)
 					}
 					s -= sname.length
-					document.body.appendChild(document.createElement('br'))
+					main.appendChild(document.createElement('br'))
 				}
 			} else {
 				for (let N of [2, 3]) {
 					for (let P of [0, 1, 2]) {
 						let rotor = new Rotor({ N, P, size })
-						for (let s = 0; s < sname.length; s++) {
+						for (let s of sname.keys()) {
 							Draw(rotor, s, Canv(`${sname[s | 0]}`, _`K${rotor.K}{1}`))
 						}
-						document.body.appendChild(document.createElement('br'))
+						DrawSS(rotor, Canv(`${sname.join('')}`))
+						main.appendChild(document.createElement('br'))
 					}
 				}
 			}
 			function Canv(...texts) {
 				let fig = document.createElement('figure')
-				fig.innerHTML = document.querySelector('figure').innerHTML
+				fig.innerHTML = main.querySelector('figure').innerHTML
 				let canvas = fig.querySelector('canvas')
 				canvas.width = canvas.height = size
 				let text = fig.querySelectorAll('pre')
 				text.forEach((t, i) => (t.textContent = texts[i] || ''))
-				document.body.appendChild(fig)
+				main.appendChild(fig)
 				return { canvas, param: text[3] }
 			}
-			function Draw(rotor, s, canv) {
+			function Draw(rotor, s, canv, p) {
 				let $ = rotor.$(canv)
 				let T = rotor.TS(s)
 				let ss = (s |= 0)
-				do $.SS(ss, { color: scolor[s], opa: ss == s ? '4' : '2' })
+				do $.SS(ss, { color: scolor[s], opa: ss == s ? '5' : '3' })
 				while ((ss = (ss + sname.length) % rotor.NS) != s)
 				$.GG(), $.g(), $.Gg(T), $.G(T)
-				$.RR(T), $.PN(T), $.QN(T)
-				$.BB()
+				if (p) $.PN(T), $.QN(T)
+				else $.Q(T, 0, 0)
+				$.RR(T), $.BB()
+			}
+			function DrawSS(rotor, canv) {
+				let $ = rotor.$(canv)
+				for (let s of sname.keys())
+					if (s < 2 || rotor.N > 2) $.SS(s, { color: scolor[s], opa: '8' })
+				$.GG(), $.g(), $.BB()
+				for (let s of sname.keys()) $.RR(rotor.TS(rotor.N == 2 ? s / 2 : s), true)
 			}
 		</script>
 	</body>
