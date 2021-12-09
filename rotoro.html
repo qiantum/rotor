@@ -64,29 +64,30 @@
 		<script src="./format.js"></script>
 		<script src="./rotoro.js"></script>
 		<script onload>
-			let sts = ['I', 'C', 'P', 'E']
+			let sname = ['I', 'C', 'P', 'E']
+			let scolor = ['#cfc', '#ccf', '#fcc', '#ccc']
 			let size = 360
-			if (!location.href.includes('?')) {
+			if (location.href.includes('?')) {
+				let N = location.search.slice(1)
+				if (N == '') location.replace(location.href.replace(/[?].*/, ''))
+				let rotor = new Rotor({ N: +N, size })
+				let ssub = min(rotor.N << max(4 - rotor.N, 0), 8)
+				for (let s = 0; s < 1; s = (Math.round(s * ssub) + 1) / ssub) {
+					for (; s < sname.length; s++) {
+						Draw(rotor, s, Canv(sname[s | 0]))
+					}
+					s -= sname.length
+					document.body.appendChild(document.createElement('br'))
+				}
+			} else {
 				for (let N of [2, 3]) {
 					for (let P of [0, 1, 2]) {
-						let r = new Rotor({ N, P, size })
-						for (let st = 0; st < sts.length; st++) {
-							Draw(r, st, Canv(`${sts[st | 0]}`, _`K${r.K}{1}`))
+						let rotor = new Rotor({ N, P, size })
+						for (let s = 0; s < sname.length; s++) {
+							Draw(rotor, s, Canv(`${sname[s | 0]}`, _`K${rotor.K}{1}`))
 						}
 						document.body.appendChild(document.createElement('br'))
 					}
-				}
-			} else {
-				let N = location.search[1] | 0
-				if (!(N >= 2)) location.replace(location.href.replace(/[?].*/, ''))
-				let rotor = new Rotor({ N: +location.search[1], size })
-				let stsub = min(rotor.N << max(4 - rotor.N, 0), 8)
-				for (let st = 0; st < 1; st = (Math.round(st * stsub) + 1) / stsub) {
-					for (; st < sts.length; st++) {
-						Draw(rotor, st, Canv(sts[st | 0]))
-					}
-					st -= sts.length
-					document.body.appendChild(document.createElement('br'))
 				}
 			}
 			function Canv(...texts) {
@@ -99,9 +100,10 @@
 				document.body.appendChild(fig)
 				return { canvas, param: text[3] }
 			}
-			function Draw(rotor, st, canv) {
+			function Draw(rotor, s, canv) {
 				let $ = rotor.$(canv)
-				let T = rotor.Tst(st)
+				let T = rotor.TS(s)
+				$.SS(s | 0, { color: scolor[s | 0], opa: '3' })
 				$.GG(), $.g(), $.Gg(T), $.G(T)
 				$.RR(T), $.PN(T), $.QN(T)
 				$.BB()
