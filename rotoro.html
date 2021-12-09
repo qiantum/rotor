@@ -103,7 +103,9 @@
 			function Draw(rotor, s, canv) {
 				let $ = rotor.$(canv)
 				let T = rotor.TS(s)
-				$.SS(s | 0, { color: scolor[s | 0], opa: '4' })
+				let ss = (s |= 0)
+				do $.SS(ss, { color: scolor[s], opa: ss == s ? '4' : '2' })
+				while ((ss = (ss + sname.length) % rotor.NS) != s)
 				$.GG(), $.g(), $.Gg(T), $.G(T)
 				$.RR(T), $.PN(T), $.QN(T)
 				$.BB()

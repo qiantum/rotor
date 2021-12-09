@@ -33,8 +33,8 @@ function Rotor({
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tQ = n => (n * tickn) / N // 转子腰点起始步进
 	let TQ = n => (n * PI2) / N // 转子腰点起始角
-	let tS = s => (s * tickn) / NS // 转子冲程起始步进
-	let TS = s => (s * PI2) / NS // 转子冲程起始角
+	let tS = s => ((s % NS) * tickn) / NS // 转子冲程起始步进
+	let TS = s => ((s % NS) * PI2) / NS // 转子冲程起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -91,14 +91,15 @@ function Rotor({
 	}
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { N, E, G, g, P, Q, BP, R, V, K, KK, KB, TQ, TS, size })
+	Object.assign(this, { N, NS: BSt.length, E, G, g, P, Q, BP, R, V, K, KK, KB, TQ, TS, size })
 
+	// 冲程区
 	let SS = BSt.map((BSt, s) => {
 		function* RR(T) {
 			for (let [X, Y] of R(T, BQt)) yield [atan(X, Y), dist(X, Y), X, Y]
 		}
 		function* TT() {
-			for (let t of Array.seq(tS(s), tS(s + 1))) yield RR(Tick_[t])
+			for (let t of Array.seq(tS(s), tS(s + 1), tickn, true)) yield RR(Tick_[t])
 		}
 		// return [...TT()].flatMap((r, t) => { //调试线集
 		// 	let s = [...r].map(([A, R, X, Y]) => [X, Y]); return t % 2 ? s.reverse() : s })
@@ -201,7 +202,7 @@ function Rotor({
 			for (let [A, R] of dot) {
 				let t = (TT == Tick_ ? ceil((tickn * A) / PI2) : A.bfind(TT, null, 1, 0)) % tickn
 				M[t] = min(M[t], R)
-		}
+			}
 		mt.values ?? (mt = [...mt])
 		M[mt[0]] == size + size && (M[mt[0]] = M[(mt[0] + 1) % tickn])
 		M[(mt.at(-1) + 1) % tickn] == size + size && (M[(mt.at(-1) + 1) % tickn] = M[mt.at(-1)])
