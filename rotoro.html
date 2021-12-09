@@ -65,7 +65,7 @@
 		<script src="./rotoro.js"></script>
 		<script onload>
 			let sname = ['I', 'C', 'P', 'E']
-			let scolor = ['#cfc', '#ccf', '#fcc', '#ccc']
+			let scolor = ['#c3f6c3', '#ccf', '#fcc', '#ccc']
 			let size = 360
 			if (location.href.includes('?')) {
 				let N = location.search.slice(1)
@@ -103,7 +103,7 @@
 			function Draw(rotor, s, canv) {
 				let $ = rotor.$(canv)
 				let T = rotor.TS(s)
-				$.SS(s | 0, { color: scolor[s | 0], opa: '3' })
+				$.SS(s | 0, { color: scolor[s | 0], opa: '4' })
 				$.GG(), $.g(), $.Gg(T), $.G(T)
 				$.RR(T), $.PN(T), $.QN(T)
 				$.BB()

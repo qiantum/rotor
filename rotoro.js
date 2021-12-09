@@ -1,7 +1,7 @@
-let { min, max, abs, floor, ceil, round, PI, cos, sin, sqrt } = Math
+let { min, max, abs, floor, ceil, round, PI, cos, sin } = Math
 let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
-let atan, diff, diffAbs, cross, area
+let atan, dist, diff, diffAbs, cross, area
 
 function Rotor({
 	N, // 转子顶角数
@@ -26,15 +26,15 @@ function Rotor({
 	Q = E * (Q + N) // 转子腰半径
 	BP *= E // 缸体转子间隙
 
+	// 转子、曲轴步进角，均匀
+	let Tick_ = (this.Tick_ = [...Array.seq(0, tickn)].map(t => (t / tickn) * PI2))
+	let Tick = (this.Tick = Tick_.slice(0, tickn))
 	let tPQ = tickn / N2 // 转子顶腰步进
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tQ = n => (n * tickn) / N // 转子腰点起始步进
 	let TQ = n => (n * PI2) / N // 转子腰点起始角
 	let tS = s => (s * tickn) / NS // 转子冲程起始步进
 	let TS = s => (s * PI2) / NS // 转子冲程起始角
-	// 圆周步进角
-	let Tick_ = (this.Tick_ = [...Array.seq(0, tickn)].map(t => (t / tickn) * PI2))
-	let Tick = (this.Tick = Tick_.slice(0, tickn))
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -44,18 +44,24 @@ function Rotor({
 	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TQ(n)) // 转子腰X
 	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TQ(n)) // 转子腰X
 
-	let TPB = (T, n) => atan(PX(T, n), PY(T, n)) // 转子顶对应缸体角
-	let tPB = (T, n) => Tick.binFind(TPB(T, n))  // 转子顶对应缸体步进
 	// 缸体型线  E*cos(T*N-PI) + (P+BP)*cos(T), E*cos(T*N-PI) + (P+BP)*cos(T)
 	let BB = Tick_.map(T => [PX(T - TPQ, 0, P + BP), PY(T - TPQ, 0, P + BP)])
-	// 缸体腰线步进
+	// 缸体步进角，非均匀
+	let BT = BB.map(([X, Y]) => atan(X, Y))
+	BT[BT.length - 1] = PI2
+	// 缸体腰线、顶线步进
 	let BQt = [...Array.seq(-tPQ, tPQ, tickn)]
-	// 缸体顶线步进
-	let BPt = [...Array.seq(tickn / NS - tPQ, tickn / NS + tPQ)]
+	let BPt = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)]
+	// 缸体腰线、顶线步进角
+	let BQT = BQt.map(BT.At())
+	let BPT = BPt.map(BT.At())
 	// 缸体冲程线步进
 	let BSt = [...Array.seq(0, max(NS - 1, 3))].map(s => [
 		...Array.seq(tS(s) - tPQ, tS(s + 1) + tPQ, tickn, true),
 	])
+
+	let TPB = (T, n) => atan(PX(T, n), PY(T, n)) // 转子顶对应缸体角
+	let tPB = (T, n, dir) => TPB(T, n).bfind(BB, [2], dir) // 转子顶对应缸体步进
 
 	// 缸体对转子旋转
 	function* RBT(B, TT) {
@@ -63,8 +69,7 @@ function Rotor({
 			for (let T of TT) {
 				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(T * (N - 1))
 				let Y = P * sin(B + T) - E * sin(B * N + T) + E * sin(T * (N - 1))
-				let A = atan(X, Y) // [0,PI2) B==0 沿T严格递增 B>0 沿T循环严格递增
-				yield [A, sqrt(X * X + Y * Y), X, Y]
+				yield [atan(X, Y), dist(X, Y), X, Y] // 角[0,PI2) B==0 沿T严格递增 B>0 沿T循环严格递增
 			}
 		else for (let b of B) yield RBT(b, TT)
 	}
@@ -90,18 +95,15 @@ function Rotor({
 
 	let SS = BSt.map((BSt, s) => {
 		function* RR(T) {
-			for (let [X, Y] of R(T, BQt)) yield [atan(X, Y), sqrt(X * X + Y * Y), X, Y]
+			for (let [X, Y] of R(T, BQt)) yield [atan(X, Y), dist(X, Y), X, Y]
 		}
 		function* TT() {
 			for (let t of Array.seq(tS(s), tS(s + 1))) yield RR(Tick_[t])
 		}
-		// 调试线集
-		// return [...TT()].flatMap((r, t) => {
-		// 	let s = [...r].map(([A, R, X, Y]) => [X, Y])
-		// 	return t%2 ? s.reverse() : s
-		// })
-		console.log(BQt, (RR(0).next().value[0] / PI2) * tickn)
-		return BSt.map(BB.At()).concat([...MinDot(TT())(0, BSt, 0, 0)].reverse())
+		// return [...TT()].flatMap((r, t) => { //调试线集
+		// 	let s = [...r].map(([A, R, X, Y]) => [X, Y]); return t % 2 ? s.reverse() : s })
+		let rs = [...MinDot(TT(), null, BT, BSt)(0, BSt, 0, 0)].reverse()
+		return BSt.map(BB.At()).concat(rs).close()
 	})
 
 	this.$ = ({ canvas, midx, midy, param }) => {
@@ -114,6 +116,7 @@ function Rotor({
 
 		function $$({ color = '#000', opa = '', thick = 1 } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
+			opa.length == 1 && /#....../.test(color) && (opa += opa)
 			fill ? ($.fillStyle = color + opa) : ($.strokeStyle = color + opa)
 		}
 		function $$$(fill) {
@@ -180,10 +183,10 @@ function Rotor({
 		}
 		// 画冲程区
 		function $SS(s, style) {
-			$$(style)
+			$$(style, true)
 			let to
 			for (let [X, Y] of SS[s]) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
-			$$$()
+			$$$(true)
 		}
 		return Object.assign(
 			{ x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
@@ -191,20 +194,24 @@ function Rotor({
 		)
 	}
 
-	// 点集求内包络线 dots:[[ [A, R] ]] mt:可闭合
-	function MinDot(dots, fix, mt = Tick_.keys()) {
-		let M = new Array(tickn + 1).fill(1 / 0)
-		for (let dot of dots) {
-			for (let [A, R, t] of dot) M[(t = ceil((tickn * A) / PI2))] = min(M[t], R)
+	// 点集求内包络线 dots:[[ [A, R] ]] mt:正向步进
+	function MinDot(dots, fix, TT = Tick_, mt = Tick_.keys()) {
+		let M = new Array(tickn).fill(size + size)
+		for (let dot of dots)
+			for (let [A, R] of dot) {
+				let t = (TT == Tick_ ? ceil((tickn * A) / PI2) : A.bfind(TT, null, 1, 0)) % tickn
+				M[t] = min(M[t], R)
 		}
-		M[tickn] = M[0]
 		mt.values ?? (mt = [...mt])
+		M[mt[0]] == size + size && (M[mt[0]] = M[(mt[0] + 1) % tickn])
+		M[(mt.at(-1) + 1) % tickn] == size + size && (M[(mt.at(-1) + 1) % tickn] = M[mt.at(-1)])
+		M.close()
 		for (let t of mt)
 			if (t < tickn) M[t] = min(M[t], M[t + 1]) * 0.375 + max(M[t], M[t + 1]) * 0.625
-		if (fix) for (let t of mt) if ((d = fix(t, Tick[t])) != null) M[t] = d
-		console.log(M)
-		function* XY(T, mtt = mt, x = E * cos(T * N), y = E * sin(T * N)) {
-			for (let t of mtt) yield [x + M[t] * cos(T + Tick_[t]), y + M[t] * sin(T + Tick_[t])]
+		if (fix) for (let t of mt) if ((d = fix(t, TT[t])) != null) M[t] = d
+
+		function* XY(T, mtt = mt, x = GX(T), y = GY(T)) {
+			for (let t of mtt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
 		}
 		return (XY.count = mt.length - 1), XY
 	}
@@ -228,7 +235,7 @@ function Rotor({
 					if (I_ != i_ && cdB < -EPSI && I_) C.push([1 / 0, 0, 0, 0, I_]) // 去掉长半径包络点
 					if (I == i && ABc > EPSI) C.push([a, r, x, y, I1]) // 短半径曲线点
 					if (I_ == i_ && ABd > EPSI) C.push([a_, r_, x_, y_, I1]) // 短半径曲线点
-					if (SX != null) C.push([atan(SX, SY), sqrt(SX * SX + SY * SY), SX, SY, I1]) //交点
+					if (SX != null) C.push([atan(SX, SY), dist(SX, SY), SX, SY, I1]) //交点
 				}
 			}
 			C.sort((c, d) => c[4] - d[4] || c[0] - d[0]) // 下标和角度顺序
@@ -236,7 +243,7 @@ function Rotor({
 			for (let c of C)
 				if (c[0] == 1 / 0) M.splice(c[4] + i--, 1)
 				else M.splice(c[4] + i++, 0, c), c.length--
-			M.push([...M[0]]), (M.at(-1)[0] += PI2) // 闭合
+			M.close(([A, ...M]) => [A + PI2, ...M]) // 闭合
 			i = 0 // 合并重合点
 			for (let m of M)
 				if (m[0] < M[i][0]) throw 'err a'
@@ -259,10 +266,8 @@ function Rotor({
 	}
 }
 
-atan = function (x, y) {
-	if (abs(x) < EPSI) return y > 0 ? PI * 0.5 : PI * 1.5
-	return Math.atan(y / x) + (x < 0 ? PI : y < 0 ? PI2 : 0)
-}
+atan = (x, y) => (Math.atan(y / x) + (x <= 0 ? PI : PI2)) % PI2 // [0,PI2)
+dist = (x, y) => Math.sqrt(x * x + y * y)
 diff = v => ((v %= PI2) > PI ? v - PI2 : v < -PI ? v + PI2 : v)
 diffAbs = v => ((v = abs(v) % PI2) > PI ? PI2 - v : v)
 Number.prototype.mod = function (n) {
@@ -272,6 +277,9 @@ Number.prototype.mod = function (n) {
 Array.prototype.At = function () {
 	return this.at.bind(this)
 }
+Array.prototype.close = function (last = v => (v instanceof Array ? [...v] : v)) {
+	return this.push(last ? last(this[0]) : this[0]), this
+}
 // [from,to]序列
 Array.seq = function* (from, to, wrap, oneAll) {
 	if (wrap == null) for (; from <= to; from++) yield from
@@ -279,14 +287,15 @@ Array.seq = function* (from, to, wrap, oneAll) {
 		for (from = from.mod(wrap), to = to.mod(wrap); yield from, oneAll || from != to; )
 			(from = (from + 1).mod(wrap)), (oneAll = false)
 }
-Number.prototype.binFind = function (s, prop, epsi = EPSI, neg) {
-	let l = 0
-	for (let h = s.length - 1, m, c; l <= h; ) {
+Number.prototype.bfind = function (s, prop, dir, epsi = EPSI) {
+	let l = 0,
+		h = s.length - 1
+	for (let m, c; l <= h; ) {
 		;(m = (l + h) >>> 1), (c = this - (prop != null ? s[m][prop] : s[m]))
 		if (c >= -epsi && c <= epsi) return m
-		c > 0 ? (l = m + 1) : (h = m - 1)
+		;(dir > 0 ? c < 0 : c <= 0) ? (h = m - 1) : (l = m + 1)
 	}
-	return neg ? ~l : l
+	return dir < 0 ? h : dir > 0 ? l : ~l
 }
 
 cross = function (ax, ay, bx, by, cx, cy, dx, dy, co) {
@@ -307,4 +316,19 @@ area = function (s) {
 	let a = 0
 	for (let [x, y] of s) (a += (xx - x) * (yy + y)), (xx = x), (yy = y)
 	return (a + (xx - x0) * (yy + y0)) / 2
+}
+
+Array.prototype.lineHole = function (hole) {
+	let ii = this.findIndex(v => v != hole)
+	if (ii < 0) throw 'all hole'
+	let len = this.length
+	let m = 0
+	for (let j = ii, i = ii, k, n; (i = (i + 1) % len) != ii; j = i)
+		if (this[i] == hole) {
+			for (k = i; this[(k = (k + 1) % len)] == hole; );
+			for (n = (k - j + len) % len, l = 1; l < n; l++, i = (i + 1) % len)
+				this[i] = this[j] + ((this[k] - this[j]) * l) / n
+			m += n - 1
+		}
+	return m
 }
