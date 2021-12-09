@@ -10,12 +10,12 @@ function Rotor({
 	Q = P, // 转子腰半径 / 偏心距
 	BP = 0.1, // 缸体转子间隙 / 偏心距
 	tickn = 96, // 圆周步进数
-	Rfast, // 快速计算转子型线
+	Rfast = true, // 快速计算转子型线
 	size, // 预估像素
 }) {
 	if ((N |= 0) < 2) throw 'err N'
 	let NB = N - 1 // 缸体顶数
-	let NBS = NB + NB // 缸体冲程数
+	let NS = NB + NB // 冲程数
 	let N2 = N + N
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
 	size = ceil(+size || min(size.clientWidth, size.clientHeight))
@@ -30,28 +30,35 @@ function Rotor({
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tQ = n => (n * tickn) / N // 转子腰点起始步进
 	let TQ = n => (n * PI2) / N // 转子腰点起始角
-	let tS = s => (s * tickn) / NBS // 转子冲程起始步进
-	let TS = s => (s * PI2) / NBS // 转子冲程起始角
+	let tS = s => (s * tickn) / NS // 转子冲程起始步进
+	let TS = s => (s * PI2) / NS // 转子冲程起始角
 	// 圆周步进角
 	let Tick_ = (this.Tick_ = [...Array.seq(0, tickn)].map(t => (t / tickn) * PI2))
 	let Tick = (this.Tick = Tick_.slice(0, tickn))
 
-	// 缸体型线
-	let BB = Tick_.map(T => [
-		E * cos(T * N - PI) + (P + BP) * cos(T),
-		E * sin(T * N - PI) + (P + BP) * sin(T),
-	])
+	// 曲轴心 X=0 Y=0
+	let GX = T => E * cos(T * N) // 转子心X
+	let GY = T => E * sin(T * N) // 转子心Y
+	let PX = (T, n = 0, p = P) => GX(T) + p * cos(T + TQ(n) + TPQ) // 转子顶X
+	let PY = (T, n = 0, p = P) => GY(T) + p * sin(T + TQ(n) + TPQ) // 转子顶Y
+	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TQ(n)) // 转子腰X
+	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TQ(n)) // 转子腰X
+
+	let TPB = (T, n) => atan(PX(T, n), PY(T, n)) // 转子顶对应缸体角
+	let tPB = (T, n) => Tick.binFind(TPB(T, n))  // 转子顶对应缸体步进
+	// 缸体型线  E*cos(T*N-PI) + (P+BP)*cos(T), E*cos(T*N-PI) + (P+BP)*cos(T)
+	let BB = Tick_.map(T => [PX(T - TPQ, 0, P + BP), PY(T - TPQ, 0, P + BP)])
 	// 缸体腰线步进
 	let BQt = [...Array.seq(-tPQ, tPQ, tickn)]
 	// 缸体顶线步进
-	let BPt = [...Array.seq(tickn / NBS - tPQ, tickn / NBS + tPQ)]
+	let BPt = [...Array.seq(tickn / NS - tPQ, tickn / NS + tPQ)]
 	// 缸体冲程线步进
-	let BSt = [...Array.seq(0, max(NBS - 1, 3))].map(s => [
+	let BSt = [...Array.seq(0, max(NS - 1, 3))].map(s => [
 		...Array.seq(tS(s) - tPQ, tS(s + 1) + tPQ, tickn, true),
 	])
 
 	// 缸体对转子旋转
-	function* BTR(B, TT) {
+	function* RBT(B, TT) {
 		if (typeof B == 'number')
 			for (let T of TT) {
 				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(T * (N - 1))
@@ -59,12 +66,12 @@ function Rotor({
 				let A = atan(X, Y) // [0,PI2) B==0 沿T严格递增 B>0 沿T循环严格递增
 				yield [A, sqrt(X * X + Y * Y), X, Y]
 			}
-		else for (let b of B) yield BTR(b, TT)
+		else for (let b of B) yield RBT(b, TT)
 	}
 	// 转子型线、即缸体绕转子心的内包络线
 	let R = Rfast
-		? MinDot(BTR(BQt.map(Tick.At()), Tick), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
-		: MinCurve(BTR(Tick, Tick))
+		? MinDot(RBT(BQt.map(Tick.At()), Tick), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+		: MinCurve(RBT(Tick, Tick))
 	console._`R in ${R.count} details`
 
 	// 工作容积，总容积，总体积
@@ -81,15 +88,20 @@ function Rotor({
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
 	Object.assign(this, { N, E, G, g, P, Q, BP, R, V, K, KK, KB, TQ, TS, size })
 
-	let SS = BSt.slice(0, 1).map((BSt, s) => {
+	let SS = BSt.map((BSt, s) => {
 		function* RR(T) {
 			for (let [X, Y] of R(T, BQt)) yield [atan(X, Y), sqrt(X * X + Y * Y), X, Y]
 		}
 		function* TT() {
 			for (let t of Array.seq(tS(s), tS(s + 1))) yield RR(Tick_[t])
 		}
-//		console.log([...MinDot(TT(), null)(BSt)])
-		return BSt.map(BB.At()).concat([...MinDot(TT(), null)(BSt)].reverse())
+		// 调试线集
+		// return [...TT()].flatMap((r, t) => {
+		// 	let s = [...r].map(([A, R, X, Y]) => [X, Y])
+		// 	return t%2 ? s.reverse() : s
+		// })
+		console.log(BQt, (RR(0).next().value[0] / PI2) * tickn)
+		return BSt.map(BB.At()).concat([...MinDot(TT())(0, BSt, 0, 0)].reverse())
 	})
 
 	this.$ = ({ canvas, midx, midy, param }) => {
@@ -97,11 +109,8 @@ function Rotor({
 		if (param)
 			param.textContent =
 				_`N${N}{} E${E}{}\nP${P / E}{1} Q${Q / E}{1}\n` + _`K${K}{} ${KK}{1} ${KB}{1}`
-
-		let gx = midx ?? canvas.clientWidth / 2 // 曲轴心X
-		let gy = midy ?? canvas.clientHeight / 2 // 曲轴心Y
-		let GX = T => gx + E * cos(T * N) // 转子心X
-		let GY = T => gy + E * sin(T * N) // 转子心Y
+		let x = midx ?? canvas.clientWidth / 2 // 曲轴心X
+		let y = midy ?? canvas.clientHeight / 2 // 曲轴心Y
 
 		function $$({ color = '#000', opa = '', thick = 1 } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
@@ -113,37 +122,32 @@ function Rotor({
 		}
 		// 画曲轴小圆
 		function $g(style) {
-			$$(style), $.arc(gx, gy, g, 0, PI2), $$$()
+			$$(style), $.arc(x, y, g, 0, PI2), $$$()
 		}
 		// 画偏心线
 		function $Gg(T, style) {
 			$$({ color: '#ccc', thick: 4, ...style })
-			$.moveTo(gx, gy), $.lineTo(GX(T), GY(T)), $$$()
+			$.moveTo(x, y), $.lineTo(x + GX(T), y + GY(T)), $$$()
 		}
 		// 画转子大圆
 		function $G(T, style) {
-			$$({ color: '#999', ...style }), $.arc(GX(T), GY(T), G, 0, PI2), $$$()
+			$$({ color: '#999', ...style }), $.arc(x + GX(T), y + GY(T), G, 0, PI2), $$$()
 		}
 		// 画转子大圆凸包
 		function $GG(style) {
-			$$({ color: '#999', opa: '5', ...style }), $.arc(gx, gy, G + E, 0, PI2), $$$()
+			$$({ color: '#999', opa: '5', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
 		}
 		// 画转子顶
 		function $P(T, n = 0, O, style) {
-			T += TQ(n)
 			$$({ color: '#00f', ...style })
-			let X = GX(T) + P * cos(T + TPQ)
-			let Y = GY(T) + P * sin(T + TPQ)
-			BP && $.arc(X, Y, BP, 0, PI2)
-			$.moveTo(X, Y), $.lineTo(GX(T) + O * cos(T + TPQ), GY(T) + O * sin(T + TPQ))
+			BP && $.arc(x + PX(T, n), y + PY(T, n), BP, 0, PI2)
+			$.moveTo(x + PX(T, n), y + PY(T, n)), $.lineTo(x + PX(T, n, O), y + PY(T, n, O))
 			$$$()
 		}
 		// 画转子腰
 		function $Q(T, n = 0, O, style) {
-			T += TQ(n)
 			$$({ color: '#0f0', ...style })
-			$.moveTo(GX(T) + Q * cos(T), GY(T) + Q * sin(T))
-			$.lineTo(GX(T) + O * cos(T), GY(T) + O * sin(T))
+			$.moveTo(x + QX(T, n), y + QY(T, n)), $.lineTo(x + QX(T, n, O), y + QY(T, n, O))
 			$$$()
 		}
 		// 画转子全部顶
@@ -157,35 +161,32 @@ function Rotor({
 		// 画转子腰凸包
 		function $QQ(style) {
 			$$({ color: '#9f9', ...style })
-			for (let T of Tick_) {
-				let to = T ? $.lineTo : $.moveTo
-				to.call($, GX(T) + Q * cos(T), GY(T) + Q * sin(T))
-			}
+			for (let T of Tick_) (T ? $.lineTo : $.moveTo).call($, x + QX(T), y + QY(T))
 			$$$()
 		}
 		// 画缸体
 		function $BB(style) {
 			$$({ color: '#00f', ...style })
 			let to
-			for (let [X, Y] of BB) (to = to ? $.lineTo : $.moveTo).call($, gx + X, gy + Y)
+			for (let [X, Y] of BB) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画转子
 		function $RR(T, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of R(T)) (to = to ? $.lineTo : $.moveTo).call($, gx + X, gy + Y)
+			for (let [X, Y] of R(T)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画冲程区
 		function $SS(s, style) {
-			$$(style, true)
+			$$(style)
 			let to
-//			for (let [X, Y] of SS[s]) (to = to ? $.lineTo : $.moveTo).call($, gx + X, gy + Y)
-			$$$(true)
+			for (let [X, Y] of SS[s]) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			$$$()
 		}
 		return Object.assign(
-			{ x: gx, y: gy, X: GX, Y: GY, g: $g, Gg: $Gg, G: $G, GG: $GG },
+			{ x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
 			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ, BB: $BB, RR: $RR, SS: $SS }
 		)
 	}
@@ -201,7 +202,7 @@ function Rotor({
 		for (let t of mt)
 			if (t < tickn) M[t] = min(M[t], M[t + 1]) * 0.375 + max(M[t], M[t + 1]) * 0.625
 		if (fix) for (let t of mt) if ((d = fix(t, Tick[t])) != null) M[t] = d
-
+		console.log(M)
 		function* XY(T, mtt = mt, x = E * cos(T * N), y = E * sin(T * N)) {
 			for (let t of mtt) yield [x + M[t] * cos(T + Tick_[t]), y + M[t] * sin(T + Tick_[t])]
 		}
@@ -213,7 +214,7 @@ function Rotor({
 		for (let cc of curves) {
 			cc.values ?? (cc = [...cc])
 			if (M != (M ??= cc)) continue // 初始化包络
-			cc.forEach(c => (c[4] = M.binFind(c[0], 0, -1)))
+			cc.forEach(c => (c[4] = c[0].binFind(M, 0, -1)))
 			let C = []
 			for (let c of cc.keys()) {
 				let [a, r, x, y, i] = cc[c]
@@ -243,11 +244,11 @@ function Rotor({
 			M.length = ++i
 		}
 		mt.values ?? (mt = [...mt])
-		function* XY(T, mtt = mt, x = E * cos(T * N), y = E * sin(T * N)) {
+		function* XY(T, mtt = mt, x = GX(T), y = GY(T)) {
 			mtt = mtt.values?.() ?? mtt
 			let t = mtt.next().value
 			if (t == null) return
-			let m = M.binFind(Tick_[t], 0)
+			let m = Tick_[t].binFind(M, 0)
 			for (let tt of mtt)
 				do
 					for (let A, TT = Tick_[tt] + (t > tt && PI2); (A = M[m]?.[0]) <= TT; m++)
@@ -278,12 +279,12 @@ Array.seq = function* (from, to, wrap, oneAll) {
 		for (from = from.mod(wrap), to = to.mod(wrap); yield from, oneAll || from != to; )
 			(from = (from + 1).mod(wrap)), (oneAll = false)
 }
-Array.prototype.binFind = function (v, prop, epsi = EPSI, neg) {
+Number.prototype.binFind = function (s, prop, epsi = EPSI, neg) {
 	let l = 0
-	for (let h = this.length - 1, m, c; l <= h; ) {
-		;(m = (l + h) >>> 1), (c = v - (prop != null ? this[m][prop] : this[m]))
+	for (let h = s.length - 1, m, c; l <= h; ) {
+		;(m = (l + h) >>> 1), (c = this - (prop != null ? s[m][prop] : s[m]))
 		if (c >= -epsi && c <= epsi) return m
-		c < 0 ? (h = m - 1) : (l = m + 1)
+		c > 0 ? (l = m + 1) : (h = m - 1)
 	}
 	return neg ? ~l : l
 }
