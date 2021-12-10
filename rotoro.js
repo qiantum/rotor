@@ -1,15 +1,15 @@
 let { min, max, abs, floor, ceil, round, PI, cos, sin } = Math
 let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
-let atan, dist, diff, diffabs, cross, area
+let atan, dist, diff, diffabs, cross, area, matran
 
 function Rotor({
 	N, // 转子顶角数
 	E, // 偏心距
 	P = (N - 1) * 0.8, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
-	BP = 0.1, // 缸体转子间隙 / 偏心距
-	tickn = 112, // 圆周步进数
+	BP = 1.3, // 缸体转子间隙 / (顶半径+偏心距) %
+	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
 	if ((N |= 0) < 2) throw 'err N'
@@ -25,7 +25,7 @@ function Rotor({
 	let g = G - E // 曲轴小节圆半径
 	P = E * (P + N + 2) // 转子顶半径
 	Q = E * (Q + N) // 转子腰半径
-	BP *= E // 缸体转子间隙
+	BP *= (P + E) / 100 // 缸体转子间隙
 
 	// 转子、曲轴步进角，均匀
 	let Tick_ = (this.Tick_ = [...Array.seq(0, tickn)].map(t => (t / tickn) * PI2))
@@ -110,8 +110,6 @@ function Rotor({
 		function* TT() {
 			for (let t of Array.seq(tS(s), tS(s + 1), tickn, true)) yield RR(Tick_[t])
 		}
-		// return [...TT()].flatMap((r, t) => { //调试线集
-		// 	let s = [...r].map(([A, R, X, Y]) => [X, Y]); return t % 2 ? s.reverse() : s })
 		let rs = [...MinDot(TT(), null, BT, BSt)(0, BSt, 0, 0)]
 		rs = BSt.map(BB.At()).concat(rs.reverse())
 		return rs.push(rs[0]), rs
@@ -223,15 +221,16 @@ function Rotor({
 	// 点集求内包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
 	function MinDot(dots, fix, TT = Tick_, tt = Tick_.keys()) {
 		if (TT[0] != 0 || TT[tickn] != PI2) throw 'err TT'
-		let M = new Array(tickn).fill(size + size)
+		let M = new Array(tickn).fill(size * 2)
 		for (let dot of dots)
 			for (let [A, R] of dot) {
 				let t = ceil(TT == Tick_ ? (tickn * A) / PI2 : A.bfind(TT)) % tickn
 				M[t] = min(M[t], R)
 			}
 		tt.values ?? (tt = [...tt])
-		M[tt[0]] == size + size && (M[tt[0]] = M[(tt[0] + 1) % tickn])
-		M[(tt.at(-1) + 1) % tickn] == size + size && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
+		// M.fillHole(size * 2) 如果tickn太小，部分步进无数据，则需要线性填充
+		M[tt[0]] == size * 2 && (M[tt[0]] = M[(tt[0] + 1) % tickn])
+		M[(tt.at(-1) + 1) % tickn] == size * 2 && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
 		M[tickn] = M[0]
 		for (let t of tt)
 			if (t < tickn) M[t] = min(M[t], M[t + 1]) * 0.3125 + max(M[t], M[t + 1]) * 0.6875
@@ -295,7 +294,7 @@ area = function (s) {
 	return (a + (xx - x0) * (yy + y0)) / 2
 }
 
-Array.prototype.lineHole = function (hole) {
+Array.prototype.fillHole = function (hole) {
 	let ii = this.findIndex(v => v != hole)
 	if (ii < 0) throw 'all hole'
 	let len = this.length
@@ -308,6 +307,16 @@ Array.prototype.lineHole = function (hole) {
 			m += n - 1
 		}
 	return m
+}
+matran = function (row) {
+	let col = []
+	let i = 0
+	for (let r of row) {
+		let j = 0
+		for (let c of r) (col[j++] ??= [])[i] = c
+		i++
+	}
+	return col
 }
 
 // TODO 非闭合曲线不适用，需改进
