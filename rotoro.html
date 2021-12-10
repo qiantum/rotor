@@ -73,10 +73,11 @@
 			let sname = ['I', 'C', 'P', 'E']
 			let scolor = ['#c3f6c3', '#ccf', '#fcc', '#ccc']
 			let size = 360
+			let conf = { size }
 			if (location.href.includes('?')) {
 				let N = location.search.slice(1)
 				if (N == '') location.replace(location.href.replace(/[?].*/, ''))
-				let rotor = new Rotor({ N: +N, size })
+				let rotor = new Rotor({ ...conf, N: +N })
 				let ssub = min(rotor.N << max(4 - rotor.N, 0), 8)
 				for (let s = 0; s < 1; s = (Math.round(s * ssub) + 1) / ssub) {
 					for (; s < sname.length; s++) {
@@ -88,7 +89,7 @@
 			} else {
 				for (let N of [2, 3]) {
 					for (let P of [0, 1, 2]) {
-						let rotor = new Rotor({ N, P, size })
+						let rotor = new Rotor({ ...conf, N, P })
 						for (let s of sname.keys()) {
 							Draw(rotor, s, Canv(`${sname[s | 0]}`, _`K${rotor.K}{1}`))
 						}
@@ -114,9 +115,10 @@
 				do $.SS(ss, { color: scolor[s], opa: ss == s ? '5' : '3' })
 				while ((ss = (ss + sname.length) % rotor.NS) != s)
 				$.GG(), $.g(), $.Gg(T), $.G(T)
-				if (p) $.PN(T), $.QN(T)
+				if (p) $.PN(T), $.QN(T), $.PBC(T)
 				else $.Q(T, 0, 0)
 				$.RR(T), $.BB()
+				$.param(T)
 			}
 			function DrawSS(rotor, canv) {
 				let $ = rotor.$(canv)
@@ -124,6 +126,7 @@
 					if (s < 2 || rotor.N > 2) $.SS(s, { color: scolor[s], opa: '8' })
 				$.GG(), $.g(), $.BB()
 				for (let s of sname.keys()) $.RR(rotor.TS(rotor.N == 2 ? s / 2 : s), true)
+				$.param()
 			}
 		</script>
 	</body>

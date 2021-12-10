@@ -1,7 +1,7 @@
 let { min, max, abs, floor, ceil, round, PI, cos, sin } = Math
 let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
-let atan, dist, diff, diffAbs, cross, area
+let atan, dist, diff, diffabs, cross, area
 
 function Rotor({
 	N, // 转子顶角数
@@ -66,6 +66,12 @@ function Rotor({
 
 	let TPB = (T, n = 0) => atan(PX(T, n), PY(T, n)) // 转子顶对应缸体角
 	let tPB = (T, n = 0, int = round) => int(TPB(T, n).bfind(BT)) % tickn // 转子顶对应缸体步进
+	// 转子顶与缸体接触角、及接触步进角
+	let PBC = (T, n = 0) => {
+		let CT = atan(PX(T, n) + g * cos(T * N), PY(T, n) + g * sin(T * N))
+		return [CT - T - TQ(n) - TPQ, CT]
+	}
+	let PBCC = max(...Tick.map(T => PBC(T)[0])) // 最大接触角
 
 	// 缸体对转子旋转
 	function* RBT(B, TT) {
@@ -93,7 +99,8 @@ function Rotor({
 	}
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { N, NS: BSt.length, E, G, g, P, Q, BP, R, V, K, KK, KB, TQ, TS, size })
+	Object.assign(this, { size, N, NS: BSt.length, E, G, g, P, Q, BP, V, K, KK, KB, PBCC })
+	Object.assign(this, { TQ, TS, R })
 
 	// 冲程区
 	let SS = BSt.map((BSt, s) => {
@@ -112,9 +119,13 @@ function Rotor({
 
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')
-		if (param)
+		function $param(T = 0) {
 			param.textContent =
-				_`N${N}{} E${E}{}\nP${P / E}{1} Q${Q / E}{1}\n` + _`K${K}{} ${KK}{1} ${KB}{1}`
+				_`N${N}{} E${E}{}\nP${P / E}{1} Q${Q / E}{1}\n` +
+				_`K${K}{} ${KK}{1} ${KB}{1}\n` +
+				_`BP${BP}{1} C${(diffabs(PBC(T)[0]) / PI2) * 360}{} ${(PBCC / PI2) * 360}{}`
+		}
+
 		let x = midx ?? canvas.clientWidth / 2 // 曲轴心X
 		let y = midy ?? canvas.clientHeight / 2 // 曲轴心Y
 
@@ -186,6 +197,16 @@ function Rotor({
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
+		// 画转子接触角
+		function $PBC(T, n = 0, O = P + BP + E, style) {
+			$$({ color: '#66c', ...style })
+			$.moveTo(x + PX(T, n, P + BP), y + PY(T, n, P + BP))
+			$.lineTo(x + PX(T, n, O), y + PY(T, n, O))
+			let CT = PBC(T, n)[1]
+			$.moveTo(x + PX(T, n) + cos(CT), y + PY(T, n) + sin(CT))
+			$.lineTo(x + PX(T, n) + (O - P) * cos(CT), y + PY(T, n) + (O - P) * sin(CT))
+			$$$()
+		}
 		// 画冲程区
 		function $SS(s, style) {
 			$$(style, true)
@@ -194,8 +215,8 @@ function Rotor({
 			$$$(true)
 		}
 		return Object.assign(
-			{ x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
-			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ, BB: $BB, RR: $RR, SS: $SS }
+			{ param: $param, x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
+			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ, BB: $BB, PBC: $PBC, RR: $RR, SS: $SS }
 		)
 	}
 
@@ -226,8 +247,8 @@ function Rotor({
 
 atan = (x, y) => (Math.atan(y / x) + (x <= 0 ? PI : PI2)) % PI2 // [0,PI2)
 dist = (x, y) => Math.sqrt(x * x + y * y)
-diff = v => ((v %= PI2) > PI ? v - PI2 : v < -PI ? v + PI2 : v)
-diffAbs = v => ((v = abs(v) % PI2) > PI ? PI2 - v : v)
+diff = v => (((v %= PI2) + v) % PI2) - v // [-PI,PI)
+diffabs = v => abs(diff(v)) // [0,PI] ((v = abs(v) % PI2) > PI ? PI2 - v : v)
 Number.prototype.mod = function (n) {
 	return ((this % n) + n) % n
 }
