@@ -6,9 +6,9 @@ let gcd, lcm, atan, dist, diff, diffabs, cross, area, matran
 function Rotor({
 	N, // 转子顶角数
 	E, // 偏心距
-	P = (N - 1) * 0.8, // 转子顶半径 / 偏心距
+	P = (N + 2) * 0.32, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
-	BP = 1.3, // 缸体转子间隙 / (顶半径+偏心距) %
+	BP = 2, // 缸体转子间隙 / 顶半径 %
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
@@ -26,7 +26,7 @@ function Rotor({
 	let g = G - E // 曲轴小节圆半径
 	P = E * (P + N + 2) // 转子顶半径
 	Q = E * (Q + N) // 转子腰半径
-	BP *= (P + E) / 100 // 缸体转子间隙
+	BP *= P / 100 // 缸体转子间隙
 
 	// 转子、曲轴步进角，均匀
 	let Tick_ = (this.Tick_ = [...Array.seq(0, tickn)].map(t => (t / tickn) * PI2))
