@@ -54,6 +54,8 @@
 			<a href="?3">三角</a>
 			<a href="?4">四角</a>
 			<a href="?5">五角</a>
+			<a href="?6">六角</a>
+			<a href="?7">七角</a>
 		</nav>
 		<main>
 			<figure>
@@ -71,19 +73,19 @@
 		<script onload>
 			let main = document.querySelector('main')
 			let sname = ['I', 'C', 'P', 'E']
-			let scolor = ['#c3f6c3', '#ccf', '#fcc', '#ccc']
+			//let scolor = ['#b6f6b650', '#e6f3ff', '#ffd0d95c', '#eeecf0']
+			let scolor = ['#a6f0a356', '#dcecff', '#ffc0c05c', '#e7e6ec']
+			let slight = ['#f0fff0', '#f6f9ff', '#fff6f6', '#f6f5f7']
 			let size = 360
 			let conf = { size }
 			if (location.href.includes('?')) {
 				let N = location.search.slice(1)
 				if (N == '') location.replace(location.href.replace(/[?].*/, ''))
 				let rotor = new Rotor({ ...conf, N: +N })
-				let ssub = min(rotor.N << max(4 - rotor.N, 0), 8)
-				for (let s = 0; s < 1; s = (Math.round(s * ssub) + 1) / ssub) {
-					for (; s < sname.length; s++) {
+				let ssub = rotor.N <= 3 ? 6 : rotor.N == 5 ? 5 : 4
+				for (let ss of sname.keys()) {
+					for (let s = ss; s < ss + 1; s = (Math.round(s * ssub) + 1) / ssub)
 						Draw(rotor, s, Canv(`${sname[s | 0]}${Math.round((s % 1) * ssub)}`), true)
-					}
-					s -= sname.length
 					main.appendChild(document.createElement('br'))
 				}
 			} else {
@@ -110,10 +112,12 @@
 			}
 			function Draw(rotor, s, canv, p) {
 				let $ = rotor.$(canv)
+				let s0 = s | 0
+				for (let ss = s0; (ss = (ss + sname.length) % rotor.NS) != s0; )
+					$.SS(ss, { color: slight[s0] })
+				if (s == s0) $.SS(s - 1, { color: scolor[(s - 1).mod(sname.length)] })
+				$.SS(s0, { color: scolor[s0] })
 				let T = rotor.TS(s)
-				let ss = (s |= 0)
-				do $.SS(ss, { color: scolor[s], opa: ss == s ? '5' : '3' })
-				while ((ss = (ss + sname.length) % rotor.NS) != s)
 				$.GG(), $.g(), $.Gg(T), $.G(T)
 				if (p) $.PN(T), $.QN(T), $.PBC(T)
 				else $.Q(T, 0, 0)
@@ -122,10 +126,8 @@
 			}
 			function DrawSS(rotor, canv) {
 				let $ = rotor.$(canv)
-				for (let s of sname.keys())
-					if (s < 2 || rotor.N > 2) $.SS(s, { color: scolor[s], opa: '8' })
 				$.GG(), $.g(), $.BB()
-				for (let s of sname.keys()) $.RR(rotor.TS(rotor.N == 2 ? s / 2 : s), true)
+				for (let s of sname.keys()) $.RR(rotor.TS(rotor.N == 2 ? s / 2 : s))
 				$.param()
 			}
 		</script>

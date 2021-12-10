@@ -130,6 +130,7 @@ function Rotor({
 		function $$({ color = '#000', opa = '', thick = 1 } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
 			opa.length == 1 && /#....../.test(color) && (opa += opa)
+			opa.length > 0 && /#....(....)?$/.test(color) && (color = color.slice(0, -opa.length))
 			fill ? ($.fillStyle = color + opa) : ($.strokeStyle = color + opa)
 		}
 		function $$$(fill) {
@@ -209,7 +210,8 @@ function Rotor({
 		function $SS(s, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SS[s]) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of SS[floor(s).mod(SS.length)])
+				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
 		return Object.assign(
