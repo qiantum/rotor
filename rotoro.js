@@ -1,7 +1,7 @@
 let { min, max, abs, floor, ceil, round, PI, cos, sin } = Math
 let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
-let atan, dist, diff, diffabs, cross, area, matran
+let gcd, lcm, atan, dist, diff, diffabs, cross, area, matran
 
 function Rotor({
 	N, // 转子顶角数
@@ -14,7 +14,8 @@ function Rotor({
 }) {
 	if ((N |= 0) < 2) throw 'err N'
 	let NB = N - 1 // 缸体顶数
-	let NS = NB + NB // 冲程数
+	let NBS = NB + NB // 缸体冲程数
+	let NS = lcm(NBS, 4) // 完整循环冲程数
 	let N2 = N + N
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
 	console._`${tickn} ticks`
@@ -34,8 +35,8 @@ function Rotor({
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tQ = n => (n * tickn) / N // 转子腰点起始步进
 	let TQ = n => (n * PI2) / N // 转子腰点起始角
-	let tS = s => ((s % NS) * tickn) / NS // 转子冲程起始步进
-	let TS = s => ((s % NS) * PI2) / NS // 转子冲程起始角
+	let tS = s => ((s % NBS) * tickn) / NBS // 转子冲程起始步进
+	let TS = s => ((s % NBS) * PI2) / NBS // 转子冲程起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -60,7 +61,7 @@ function Rotor({
 	let BQT = BQt.map(BT.At())
 	let BPT = BPt.map(BT.At())
 	// 缸体冲程线步进
-	let BSt = [...Array.seq(0, max(NS - 1, 3))].map(s => [
+	let BSt = [...Array.seq(0, NBS - 1)].map(s => [
 		...Array.seq(tS(s) - tPQ, tS(s + 1) + tPQ, tickn, true),
 	])
 
@@ -99,7 +100,7 @@ function Rotor({
 	}
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NS: BSt.length, E, G, g, P, Q, BP, V, K, KK, KB, PBCC })
+	Object.assign(this, { size, N, NS, E, G, g, P, Q, BP, V, K, KK, KB, PBCC })
 	Object.assign(this, { TQ, TS, R })
 
 	// 冲程区
@@ -210,7 +211,7 @@ function Rotor({
 		function $SS(s, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SS[floor(s).mod(SS.length)])
+			for (let [X, Y] of SS[floor(s).mod(NBS)])
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
@@ -246,13 +247,20 @@ function Rotor({
 	}
 }
 
+gcd = function (a, b) {
+	;(a |= 0), (b |= 0)
+	for (let c; b; c = a % b, a = b, b = c);
+	return a
+}
+lcm = (a, b) => ((a | 0) * (b | 0)) / gcd(a, b)
+Number.prototype.mod = function (n) {
+	return ((this % n) + n) % n
+}
+
 atan = (x, y) => (Math.atan(y / x) + (x <= 0 ? PI : PI2)) % PI2 // [0,PI2)
 dist = (x, y) => Math.sqrt(x * x + y * y)
 diff = v => (((v %= PI2) + v) % PI2) - v // [-PI,PI)
 diffabs = v => abs(diff(v)) // [0,PI] ((v = abs(v) % PI2) > PI ? PI2 - v : v)
-Number.prototype.mod = function (n) {
-	return ((this % n) + n) % n
-}
 
 Array.prototype.At = function () {
 	return this.at.bind(this)
