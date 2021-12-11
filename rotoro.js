@@ -6,7 +6,7 @@ let gcd, lcm, atan, dist, diff, diffabs, cross, area, matran
 function Rotor({
 	N, // 转子顶角数
 	E, // 偏心距
-	P = (N + 2) * 0.32, // 转子顶半径 / 偏心距
+	P = (N + 0.5) * 0.4, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
 	BP = 2, // 缸体转子间隙 / 顶半径 %
 	tickn = 240, // 圆周步进数
@@ -18,14 +18,13 @@ function Rotor({
 	let NS = lcm(NBS, 4) // 完整循环冲程数
 	let N2 = N + N
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
-	console._`${tickn} ticks`
 
 	size = ceil(+size || min(size.clientWidth, size.clientHeight))
-	E ??= floor((size * 0.4375) / (P + N + 3)) // 偏心距
+	E ??= round((size * 0.6875) / (N + P + 2.3)) / 2 // 偏心距
 	let G = E * N // 转子大节圆半径
 	let g = G - E // 曲轴小节圆半径
-	P = E * (P + N + 2) // 转子顶半径
-	Q = E * (Q + N) // 转子腰半径
+	P = round(E * (P + N + 2)) // 转子顶半径
+	Q = round(E * (Q + N)) // 转子腰半径
 	BP *= P / 100 // 缸体转子间隙
 
 	// 转子、曲轴步进角，均匀
@@ -96,11 +95,10 @@ function Rotor({
 		VB = area(BB)
 		VV = VB - area(R(0))
 		;(K = V / v + 1), (KK = VV / V), (KB = VB / V)
-		console._`Vmin ${v}{} Vmax ${V}{} K ${K}{1}  KK ${KK}{1} KB ${KB}{1}`
 	}
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NS, E, G, g, P, Q, BP, V, K, KK, KB, PBCC })
+	Object.assign(this, { size, N, NS, E, G, g, P, Q, BP, V, K, VV, KK, VB, KB, PBCC })
 	Object.assign(this, { TQ, TS, R })
 
 	// 冲程区
@@ -116,15 +114,18 @@ function Rotor({
 		return rs.push(rs[0]), rs
 	})
 
+	let params =
+		_`N${N}__K${K}{}__E${E}{}__P${P}__` +
+		_`V${VV / 100}{}/${V / 100}{}__=${KK}{1} VB${VB / 100}{}__` +
+		_`BP${BP}{1} C${(PBCC / PI2) * 360}{}`
+	console.log(...params.split('__'), `tn${tickn}`)
+
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')
 		function $param(T = 0) {
 			param.textContent =
-				_`N${N}{} E${E}{}\nP${P / E}{1} Q${Q / E}{1}\n` +
-				_`K${K}{} ${KK}{1} ${KB}{1}\n` +
-				_`BP${BP}{1} C${(diffabs(PBC(T)[0]) / PI2) * 360}{} ${(PBCC / PI2) * 360}{}`
+				params.replace(/__/g, '\n') + _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{}`
 		}
-
 		let x = midx ?? canvas.clientWidth / 2 // 曲轴心X
 		let y = midy ?? canvas.clientHeight / 2 // 曲轴心Y
 

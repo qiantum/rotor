@@ -36,6 +36,7 @@
 		}
 		pre {
 			margin: 0;
+			font-size: 14px;
 		}
 		pre:nth-child(2),
 		pre:nth-child(4) {
@@ -90,14 +91,13 @@
 				}
 			} else {
 				for (let N of [2, 3, 5]) {
-					for (let P of [0, (N + 2) * 0.32]) {
-						let rot = new Rotor({ ...conf, N, P })
-						for (let s of sname.keys()) {
-							Draw(rot, s, Canv(`${Sstyle(s).name}`, _`K${rot.K}{1}`))
-						}
-						DrawSS(rot, Canv(`${sname.join('')}`))
-						main.appendChild(document.createElement('br'))
-					}
+					let rot = new Rotor({ ...conf, N })
+					for (let s of sname.keys())
+						Draw(rot, s, Canv(`${Sstyle(s).name}`, _`K${rot.K}{1}`))
+					DrawSS(rot, Canv(`${sname.join('')}`, _`K${rot.K}{1}`))
+					rot = new Rotor({ ...conf, N, P: 0 })
+					DrawSS(rot, Canv(`${sname.join('')}`, _`K${rot.K}{1}`))
+					main.appendChild(document.createElement('br'))
 				}
 			}
 			function Sstyle(s, pair, color = scolor) {
