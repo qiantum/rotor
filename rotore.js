@@ -19,7 +19,7 @@ function Rotor({
 	let N2 = N + N
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
-	size = ceil(+size || min(size.clientWidth, size.clientHeight))
+	size = ceil(+size || min(size.width, size.height))
 	E ??= round((size * 0.6875) / (N + P + 2.3)) / 2 // 偏心距
 	let G = E * N // 转子大节圆半径
 	let g = G - E // 曲轴小节圆半径
@@ -124,10 +124,10 @@ function Rotor({
 		let $ = canvas.getContext('2d')
 		function $param(T = 0) {
 			param.textContent =
-				params.replace(/__/g, '\n') + _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{}`
+				params.replace(/__/g, '\n') + _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}`
 		}
-		let x = midx ?? canvas.clientWidth / 2 // 曲轴心X
-		let y = midy ?? canvas.clientHeight / 2 // 曲轴心Y
+		let x = midx ?? canvas.width / 2 // 曲轴心X
+		let y = midy ?? canvas.height / 2 // 曲轴心Y
 
 		function $$({ color = '#000', opa = '', thick = 1 } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)

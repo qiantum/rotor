@@ -1,0 +1,192 @@
+<html>
+	<meta charset="utf-8" />
+	<style>
+		body {
+			margin: 0.4rem;
+			background-color: #eee;
+		}
+		body * {
+			vertical-align: bottom;
+		}
+		main {
+			white-space: nowrap;
+		}
+		figure:first-of-type {
+			display: none;
+		}
+		figure {
+			all: unset;
+			display: inline-block;
+			position: relative;
+			margin: 0.4rem;
+		}
+		figure div {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 10;
+			display: grid;
+			grid-template: auto / auto auto;
+			place-content: space-between space-between;
+		}
+		canvas {
+			background-color: #fff;
+		}
+		pre {
+			margin: 0;
+			font-size: 14px;
+		}
+		pre:nth-child(2),
+		pre:nth-child(4) {
+			text-align: right;
+		}
+		a {
+			text-decoration: none;
+			color: #33c;
+			margin-left: 1rem;
+		}
+		#ticky {
+			margin-left: 2rem;
+		}
+		#tick {
+			width: 30rem;
+		}
+	</style>
+	<body>
+		<nav>
+			<a href="?">参数对比</a>
+			<a href="?n=2">二角</a>
+			<a href="?n=3">三角</a>
+			<a href="?n=4">四角</a>
+			<a href="?n=5">五角</a>
+			<a href="?n=6">六角</a>
+			<a href="?n=7">七角</a>
+			<input id="ticky" type="checkbox" onchange="Ticky()" /><label for="ticky">步进</label>
+			<input id="tick" type="range" step="3" oninput="Tick()" style="display: none" />
+		</nav>
+		<main>
+			<figure>
+				<canvas></canvas>
+				<div>
+					<pre></pre>
+					<pre></pre>
+					<pre></pre>
+					<pre></pre>
+				</div>
+			</figure>
+		</main>
+		<script src="./format.js"></script>
+		<script src="./rotoro.js"></script>
+		<script onload>
+			if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
+			let url = new URL(location)
+			let show = url.searchParams
+			let main = document.querySelector('main')
+			let ticky = (document.querySelector('#ticky').checked = show.get('tick') != null)
+			let tick = ticky ? document.querySelector('#tick') : null
+			tick && ((tick.style = 'display:'), (tick.value = 0))
+
+			//let { min, max, floor, round, ceil } = Math
+			let sname = ['I', 'C', 'P', 'E']
+			//let scolor = ['#c9c9ff56', '#e3f3e3', '#ffc0c05c', '#e7e6ec']
+			//let scolor = ['#b6f6b650', '#e6f3ff', '#ffd0d95c', '#eeecf0']
+			let scolor = ['#a6f0a356', '#dcecff', '#ffc0c05c', '#e7e6ec']
+			//let slight = ['#f0fff0', '#f6f9ff', '#fff6f6', '#f6f5f7']
+			let sdual = show.get('.2') != null
+			let size = show.get('size') ?? 360
+			let conf = { N: show.get('n') | 0, size }
+			let ticks = []
+
+			if (ticky) {
+				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
+					ticks.push([new Rotor({ ...conf, N }), Canv()])
+					tick.max = max(tick.max, ticks.at(-1)[0].NS * 360-1)
+					console.log(tick.max / 360)
+				}
+				ticks.length > 1 && main.appendChild(document.createElement('br'))
+				for (let t of ticks) Text(DrawSS(t[0], Canv()))
+				Tick()
+			} else if (conf.N >= 2) {
+				let rot = new Rotor({ ...conf })
+				let ssub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
+				for (let ss = 0; ss < rot.NS; ss++) {
+					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
+						Text(Draw(rot, s, Canv(), true), round((s % 1) * ssub))
+					main.appendChild(document.createElement('br'))
+				}
+			} else {
+				for (let N of [2, 3, 5]) {
+					let rot = new Rotor({ ...conf, N })
+					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
+					Text(DrawSS(rot, Canv()))
+					rot = new Rotor({ ...conf, N, P: 0 })
+					Text(DrawSS(rot, Canv()))
+					main.appendChild(document.createElement('br'))
+				}
+			}
+
+			function Draw(rot, s, canv, p) {
+				let $ = rot.$(canv)
+				let s0 = s | 0
+				//for (let ss = s0; (ss = (ss + sname.length) % rot.NS) != s0; )
+				//	$.SS(ss, Scolor(s0, false, slight))
+				if (abs(s - round(s)) <= 0.1) $.SS(Spair(s), Sstyle(Spair(s)))
+				$.SS(s0, Sstyle(s0))
+				let T = rot.TS(s)
+				$.GG(), $.g(), $.Gg(T), $.G(T)
+				if (p) $.PN(T), $.QN(T), $.PBC(T)
+				else $.Q(T, 0, 0)
+				$.RR(T), $.BB()
+				$.param(T)
+				return (canv.rot = rot), (canv.s = s), canv
+			}
+			function DrawSS(rot, canv) {
+				let $ = rot.$(canv)
+				$.GG(), $.g(), $.BB()
+				for (let s of sname.keys()) $.RR(rot.TS(rot.N == 2 ? s / 2 : s))
+				$.param()
+				return (canv.rot = rot), delete canv.s, canv
+			}
+			function Canv() {
+				let fig = document.createElement('figure')
+				fig.innerHTML = main.querySelector('figure').innerHTML
+				let canvas = fig.querySelector('canvas')
+				canvas.width = canvas.height = size
+				let text = fig.querySelectorAll('pre')
+				main.appendChild(fig)
+				return { canvas, text, param: text[3] }
+			}
+			function Text(canv, ...texts) {
+				let t = canv.text
+				let s = floor(canv.s).mod(sname.length)
+				let ss = floor(canv.s / sname.length) + 1
+				if (canv.s == null) t[0].textContent = `${sname.join('')}${texts[0] ?? ''}`
+				else t[0].textContent = `${ss == 1 ? '' : ss}${sname[s]}${texts[0] ?? ''}`
+				t[1].textContent = _`K${canv.rot.K}{1}${texts[1] ?? ''}`
+				t[2].textContent = _`${texts[2] ?? ''}`
+				return canv
+			}
+			function Spair(s) {
+				let sp = round(s)
+				return sp + (sdual ? sp ^ 1 : sp - 1) - (s | 0)
+			}
+			function Sstyle(s, color = scolor) {
+				return { color: color[floor(s).mod(sname.length)] }
+			}
+
+			function Ticky() {
+				ticky ? show.delete('tick') : show.append('tick', '')
+				location.href = url
+			}
+			function Tick() {
+				let s = (tick.value | 0) / 360
+				for (let t of ticks) {
+					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
+					Text(Draw(t[0], s, t[1], true))
+				}
+			}
+		</script>
+	</body>
+</html>
