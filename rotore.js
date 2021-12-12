@@ -1,4 +1,4 @@
-let { min, max, abs, floor, ceil, round, PI, cos, sin } = Math
+let { min, max, abs, floor, ceil, round, PI, cos, sin, sqrt } = Math
 let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
 let gcd, lcm, atan, dist, diff, diffabs, cross, area, matran
@@ -35,8 +35,8 @@ function Rotor({
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tQ = n => (n * tickn) / N // 转子腰点起始步进
 	let TQ = n => (n * PI2) / N // 转子腰点起始角
-	let tS = s => ((s % NBS) * tickn) / NBS // 转子冲程起始步进
-	let TS = s => ((s % NBS) * PI2) / NBS // 转子冲程起始角
+	let tS = S => ((S % NBS) * tickn) / NBS // 转子冲程起始步进
+	let TS = S => ((S % NBS) * PI2) / NBS // 转子冲程起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -54,8 +54,8 @@ function Rotor({
 	BT[BT.length - 1] = PI2 // 缸体步进角，非均匀
 	let BPt = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)] // 缸体顶线步进
 	// 缸体冲程线步进
-	let BSt = [...Array.seq(0, NBS - 1)].map(s => [
-		...Array.seq(tS(s) - tPQ, tS(s + 1) + tPQ, tickn, true),
+	let BSt = [...Array.seq(0, NBS - 1)].map(S => [
+		...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true),
 	])
 
 	let TQB = (T, n = 0) => atan(QX(T, n), QY(T, n)) // 转子腰对应缸体角
@@ -78,17 +78,19 @@ function Rotor({
 		else for (let b of B) yield RBT(b, TT)
 	}
 	// 转子型线、即缸体绕转子心的内包络线
-	let R = MinDot(RBT(Qt.map(Tick.At()), Tick), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+	let R = minDot(RBT(Qt.map(Tick.At()), Tick), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 	// let R = MinCurve(RBT(Tick, Tick), true)
 
+	let V0 = area(Qt.map(BB.At())) - area(R(0, Qt)) // 最小容积 == VQ(0, 0, true)
 	// 转子腰线容积
-	function VQ(T, n = 0) {
+	function VQ(T, n = 0, noV0) {
 		let t = tQB(T, n) // 为0相当于Qt，为tS(1)相当于BPt
-		return area([...Array.seq(t - tPQ, t + tPQ, tickn)].map(BB.At())) - area(R(Tick[t], Qt))
+		let v = area([...Array.seq(t - tPQ, t + tPQ, tickn)].map(BB.At())) - area(R(Tick[t], Qt))
+		return noV0 ? v : v - V0
 	}
 
-	let V = VQ(TS(1)) - VQ(0) // 工作容积
-	let K = V / VQ(0) + 1 // 容积比，即压缩比、膨胀比
+	let V = VQ(TS(1)) // 工作容积
+	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
 	let VB = area(BB) // 总体积
 	let KB = VB / V // 总体积比工作容积
 	let VV = VB - area(R(0)) // 总容积
@@ -99,32 +101,41 @@ function Rotor({
 	Object.assign(this, { TQ, TS, R, VQ })
 
 	// 冲程区
-	let SS = BSt.map((BSt, s) => {
+	let SS = BSt.map((BSt, S) => {
 		function* RR(T) {
 			for (let [X, Y] of R(T, Qt)) yield [atan(X, Y), dist(X, Y), X, Y]
 		}
 		function* TT() {
-			for (let t of Array.seq(tS(s), tS(s + 1), tickn, true)) yield RR(Tick_[t])
+			for (let t of Array.seq(tS(S), tS(S + 1), tickn, true)) yield RR(Tick_[t])
 		}
-		let rs = [...MinDot(TT(), null, BT, BSt)(0, BSt, 0, 0)]
-		rs = BSt.map(BB.At()).concat(rs.reverse())
-		return rs.push(rs[0]), rs
+		let s = [...minDot(TT(), null, BT, BSt)(0, BSt, 0, 0)]
+		s = BSt.map(BB.At()).concat(s.reverse())
+		return s.push(s[0]), s
 	})
 
-	let params =
-		_`N${N}__K${K}{}__E${E}{}__P${P}__V${VV / 100}{}|${VB / 100}{}__` +
-		_`/${V / 100}{}*${KK}{1}__` +
-		_`BP${BP}{1} C${(PBCC / PI2) * 360}{}`
-	console.log(...params.split('__'), `tn${tickn}`)
+	function params(T) {
+		let p1 = ''
+		if (T != null) {
+			let a = (T / TS(1)) * PI
+			let pis = (2 + 1 - sqrt(2 * 2 - sin(a) * sin(a)) - cos(a)) / 2
+			p1 = _`${VQ(T) / V}{2}=${VQ(T) / 100}{03}__(${(1 - cos(a)) / 2}{2} ${pis}{2})__`
+		}
+		let p2 = T != null ? _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}` : ''
+		return (
+			_`N${N}__K${K}{}__E${E}{}__P${P}__V${V / 100}{}__` +
+			p1 +
+			_`${KK}{1}=${VV / 100}{} ${VB / 100}{}__` +
+			_`BP${BP}{1} C${(PBCC / PI2) * 360}{}` +
+			p2
+		)
+	}
+	console.log(...params().split('__'), `tn${tickn}`)
 
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')
-		function $param(T = 0) {
-			param.textContent =
-				params.replace(/__/g, '\n') + _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}`
-		}
 		let x = midx ?? canvas.width / 2 // 曲轴心X
 		let y = midy ?? canvas.height / 2 // 曲轴心Y
+		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
 
 		function $$({ color = '#000', opa = '', thick = 1 } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
@@ -206,10 +217,10 @@ function Rotor({
 			$$$()
 		}
 		// 画冲程区
-		function $SS(s, style) {
+		function $SS(S, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SS[floor(s).mod(NBS)])
+			for (let [X, Y] of SS[floor(S).mod(NBS)])
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
@@ -220,7 +231,7 @@ function Rotor({
 	}
 
 	// 点集求内包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
-	function MinDot(dots, fix, TT = Tick_, tt = Tick_.keys()) {
+	function minDot(dots, fix, TT = Tick_, tt = Tick_.keys()) {
 		if (TT[0] != 0 || TT[tickn] != PI2) throw 'err TT'
 		let M = new Array(tickn).fill(size * 2)
 		for (let dot of dots)

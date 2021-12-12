@@ -104,7 +104,7 @@
 					ticks.push([new Rotor({ ...conf, N }), Canv()])
 					tick.max = max(tick.max, ticks.at(-1)[0].NS * 360 - tick.step)
 				}
-				ticks.length > 1 && main.appendChild(document.createElement('br'))
+				conf.N >= 2 || main.appendChild(document.createElement('br'))
 				for (let t of ticks) Text(DrawSS(t[0], Canv()))
 				Tick()
 			} else if (conf.N >= 2) {
@@ -176,6 +176,7 @@
 			}
 
 			function Ticky() {
+				document.querySelector('#ticky').checked = ticky
 				ticky ? show.delete('tick') : show.append('tick', '')
 				location.href = url
 			}
