@@ -81,16 +81,17 @@ function Rotor({
 	let R = minDot(RBT(Qt.map(Tick.At()), Tick), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 	// let R = MinCurve(RBT(Tick, Tick), true)
 
-	let V0 = area(Qt.map(BB.At())) - area(R(0, Qt)) // 最小容积 == VQ(0, 0, true)
+	let Vmin = area(Qt.map(BB.At()).concat([...R(0, Qt)].reverse())) // 最小容积 == VQ(0, 0, true)
 	// 转子腰线容积
 	function VQ(T, n = 0, noV0) {
 		let t = tQB(T, n) // 为0相当于Qt，为tS(1)相当于BPt
-		let v = area([...Array.seq(t - tPQ, t + tPQ, tickn)].map(BB.At())) - area(R(Tick[t], Qt))
-		return noV0 ? v : v - V0
+		let b = [...Array.seq(t - tPQ, t + tPQ, tickn)].map(BB.At())
+		let v = area(b.concat([...R(T, Qt)].reverse()))
+		return noV0 ? v : v - Vmin
 	}
 
 	let V = VQ(TS(1)) // 工作容积
-	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
+	let K = V / Vmin + 1 // 容积比，即压缩比、膨胀比
 	let VB = area(BB) // 总体积
 	let KB = VB / V // 总体积比工作容积
 	let VV = VB - area(R(0)) // 总容积
@@ -118,7 +119,7 @@ function Rotor({
 		if (T != null) {
 			let a = (T / TS(1)) * PI
 			let pis = (2 + 1 - sqrt(2 * 2 - sin(a) * sin(a)) - cos(a)) / 2
-			p1 = _`${VQ(T) / V}{2}=${VQ(T) / 100}{03}__(${(1 - cos(a)) / 2}{2} ${pis}{2})__`
+			p1 = _`${VQ(T) / V}{2}=${VQ(T) / 100}{03}__(${pis}{2} ${(1 - cos(a)) / 2}{2})__`
 		}
 		let p2 = T != null ? _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}` : ''
 		return (
@@ -129,7 +130,7 @@ function Rotor({
 			p2
 		)
 	}
-	console.log(...params().split('__'), `tn${tickn}`)
+	console.log(...params().split('__'), _`Vmin${Vmin/100}{1} tn${tickn}`)
 
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')
@@ -310,7 +311,7 @@ area = function (s) {
 	let [xx, yy] = [x0, y0]
 	let a = 0
 	for (let [x, y] of s) (a += (xx - x) * (yy + y)), (xx = x), (yy = y)
-	return (a + (xx - x0) * (yy + y0)) / 2
+	return (a + (xx - x0) * (yy + y0)) / 2 // 闭合
 }
 
 Array.prototype.fillHole = function (hole) {
