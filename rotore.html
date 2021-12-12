@@ -51,12 +51,12 @@
 			margin-left: 2rem;
 		}
 		#tick {
-			width: 30rem;
+			width: 50rem;
 		}
 	</style>
 	<body>
 		<nav>
-			<a href="?">参数对比</a>
+			<a href="?">对比</a>
 			<a href="?n=2">二角</a>
 			<a href="?n=3">三角</a>
 			<a href="?n=4">四角</a>
@@ -78,7 +78,7 @@
 			</figure>
 		</main>
 		<script src="./format.js"></script>
-		<script src="./rotoro.js"></script>
+		<script src="./rotore.js"></script>
 		<script onload>
 			if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
 			let url = new URL(location)
@@ -102,8 +102,7 @@
 			if (ticky) {
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
 					ticks.push([new Rotor({ ...conf, N }), Canv()])
-					tick.max = max(tick.max, ticks.at(-1)[0].NS * 360-1)
-					console.log(tick.max / 360)
+					tick.max = max(tick.max, ticks.at(-1)[0].NS * 360 - tick.step)
 				}
 				ticks.length > 1 && main.appendChild(document.createElement('br'))
 				for (let t of ticks) Text(DrawSS(t[0], Canv()))
