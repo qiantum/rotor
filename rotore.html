@@ -29,7 +29,7 @@
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
 					for (let P of conf.N >= 2 ? [undefined, 0, 1, 2] : [undefined])
 						ticks.push([new Rotor({ ...conf, N, P })])
-					tick.max = max(tick.max, ticks.at(-1)[0].NS * 180)
+					tick.max = max(tick.max, 720 + (ticks.at(-1)[0].NS - 4) * 40)
 				}
 				for (let t of ticks.slice(0, ceil(ticks.length / 2))) t[1] = Canv()
 				for (let t of ticks.slice(0, ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
@@ -79,13 +79,15 @@
 				return (canv.rot = rot), (canv.T = canv.S = null), canv
 			}
 			function Tick() {
-				let s = (tick.value | 0) / 180
+				let s = tick.value | 0
+				s = s <= 720 ? s / 180 : 4 + (s - 720) / 40
 				for (let t of ticks) {
 					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
 					Text(Draw(t[0], s, t[1], true))
 				}
 			}
 			;(tick.disabled = !ticky), (tick.oninput = Tick)
+			ticky && tick.focus()
 
 			function Canv() {
 				let $ = document.querySelector('template').content.cloneNode(true)
@@ -268,6 +270,7 @@
 		}
 		#tick {
 			width: 50rem;
+			outline: none;
 		}
 	</style>
 </html>
