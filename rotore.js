@@ -36,7 +36,7 @@ function Rotor({
 	let tQ = n => (n * tickn) / N // 转子腰点起始步进
 	let TQ = n => (n * PI2) / N // 转子腰点起始角
 	let tS = S => ((S % NBS) * tickn) / NBS // 转子冲程起始步进
-	let TS = S => ((S % NBS) * PI2) / NBS // 转子冲程起始角
+	let TS = S => (S * PI2) / NBS // 转子冲程起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -87,7 +87,7 @@ function Rotor({
 		let t = tQB(T, n) // 为0相当于Qt，为tS(1)相当于BPt
 		let b = [...Array.seq(t - tPQ, t + tPQ, tickn)].map(BB.At())
 		let v = area(b.concat([...R(T, Qt)].reverse()))
-		return noV0 ? v : v - Vmin
+		return round(noV0 ? v : v - Vmin)
 	}
 
 	let V = VQ(TS(1)) // 工作容积
@@ -130,7 +130,7 @@ function Rotor({
 			p2
 		)
 	}
-	console.log(...params().split('__'), _`Vmin${Vmin/100}{1} tn${tickn}`)
+	console.log(...params().split('__'), _`Vmin${Vmin / 100}{1} tn${tickn}`)
 
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')

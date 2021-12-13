@@ -11,7 +11,7 @@
 			let ticky = mode.get('tick') != null
 			let tick = document.querySelector('#tick')
 
-			//let { min, max, floor, round, ceil } = Math
+			//let { min, max, floor, round, ceil, PI } = Math, PI2 = PI+PI
 			let sname = ['I', 'C', 'P', 'E']
 			//let scolor = ['#c9c9ff56', '#e3f3e3', '#ffc0c05c', '#e7e6ec']
 			//let scolor = ['#b6f6b650', '#e6f3ff', '#ffd0d95c', '#eeecf0']
@@ -26,11 +26,14 @@
 			if (ticky) {
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
 					for (let P of conf.N >= 2 ? [undefined, 0, 1, 2] : [undefined])
-						ticks.push([new Rotor({ ...conf, N, P }), Canv()])
-					tick.max = max(tick.max, ticks.at(-1)[0].NS * 360 - tick.step)
+						ticks.push([new Rotor({ ...conf, N, P })])
+					tick.max = max(tick.max, ticks.at(-1)[0].NS * 180)
 				}
+				for (let t of ticks.slice(0, ceil(ticks.length / 2))) t[1] = Canv()
+				for (let t of ticks.slice(0, ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
 				Break()
-				for (let t of ticks) Text(DrawSS(t[0], Canv()))
+				for (let t of ticks.slice(ceil(ticks.length / 2))) t[1] = Canv()
+				for (let t of ticks.slice(ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
 				Break(), Tick()
 			} else if (conf.N >= 2) {
 				let rot = new Rotor({ ...conf })
@@ -56,25 +59,25 @@
 				let s0 = s | 0
 				//for (let ss = s0; (ss = (ss + sname.length) % rot.NS) != s0; )
 				//	$.SS(ss, Scolor(s0, false, slight))
-				if (abs(s - round(s)) <= 0.1) $.SS(Spair(s), Sstyle(Spair(s)))
+				if (abs(s - round(s)) <= 1 / 15) $.SS(Spair(s), Sstyle(Spair(s)))
 				$.SS(s0, Sstyle(s0))
 				let T = rot.TS(s)
 				$.GG(), $.g(), $.Gg(T), $.G(T)
 				if (p) $.PN(T), $.QN(T), $.PBC(T)
 				else $.Q(T, 0, 0)
 				$.RR(T), $.BB()
-				$.param(p ? T : undefined)
-				return (canv.rot = rot), (canv.s = s), canv
+				$.param(T)
+				return (canv.rot = rot), (canv.T = T), (canv.S = s), canv
 			}
 			function DrawSS(rot, canv) {
 				let $ = rot.$(canv)
 				$.GG(), $.g(), $.BB()
 				for (let s of sname.keys()) $.RR(rot.TS(rot.N == 2 ? s / 2 : s))
 				$.param()
-				return (canv.rot = rot), delete canv.s, canv
+				return (canv.rot = rot), (canv.T = canv.S = null), canv
 			}
 			function Tick() {
-				let s = (tick.value | 0) / 360
+				let s = (tick.value | 0) / 180
 				for (let t of ticks) {
 					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
 					Text(Draw(t[0], s, t[1], true))
@@ -83,24 +86,28 @@
 			;(tick.style = ticky ? '' : 'display:none'), (tick.oninput = Tick)
 
 			function Canv() {
-				let fig = document.querySelector('template').content.cloneNode(true)
-				let canvas = fig.querySelector('canvas')
+				let $ = document.querySelector('template').content.cloneNode(true)
+				let canvas = $.querySelector('canvas')
 				canvas.width = canvas.height = size
-				let text = fig.querySelectorAll('pre')
-				main.insertBefore(fig, main.lastElementChild)
+				let text = $.querySelectorAll('pre')
+				main.insertBefore($, main.lastElementChild)
 				return { canvas, text, param: text[3] }
 			}
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
 			function Text(canv, ...texts) {
-				let t = canv.text
-				let s = floor(canv.s).mod(sname.length)
-				let ss = floor(canv.s / sname.length) + 1
-				if (canv.s == null) t[0].textContent = `${sname.join('')}${texts[0] ?? ''}`
-				else t[0].textContent = `${ss == 1 ? '' : ss}${sname[s]}${texts[0] ?? ''}`
-				t[1].textContent = texts[1] ?? ''
-				t[2].textContent = texts[2] ?? ''
+				let $ = canv.text
+				let s = floor(canv.S).mod(sname.length)
+				let ss = floor(canv.S / sname.length) + 1
+				if (canv.S == null) $[0].textContent = `${sname.join('')}${texts[0] ?? ''}`
+				else $[0].textContent = `${ss == 1 ? '' : ss}${sname[s]}${texts[0] ?? ''}`
+				let t = (canv.T ?? 0) / PI2
+				let tn = t * canv.rot.N
+				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
+				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
+				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
+				$[2].textContent = texts[2] ?? ''
 				return canv
 			}
 			function Spair(s) {
@@ -111,21 +118,26 @@
 				return { color: color[floor(s).mod(sname.length)] }
 			}
 
+			function Url(url, k, v, bool, replace) {
+				if (bool) v ? url.searchParams.set(k, '') : url.searchParams.delete(k)
+				else v != null ? url.searchParams.set(k, v) : url.searchParams.delete(k)
+				url.searchParams.sort()
+				if (replace) history.replaceState(null, '', url), location.reload()
+				return url
+			}
 			document.querySelector('#ticky').checked = ticky
-			document.querySelector('#ticky').onchange = _ => {
-				document.querySelector('#ticky').checked = ticky
-				ticky ? mode.delete('tick') : mode.append('tick', '')
-				location.href = url
+			document.querySelector('#ticky').onchange = function () {
+				Url(url, 'tick', !(this.checked = ticky), true, true)
 			}
-			onhashchange = _ => {
-				let v = (document.querySelector('#vert').checked = url.hash.includes('vert'))
-				document.body.className = v ? 'vert' : ''
+			let vert = mode.get('vert') != null
+			document.querySelector('#vert').checked = vert
+			document.body.className = vert ? 'vert' : ''
+			document.querySelector('#vert').onchange = function () {
+				Url(url, 'vert', !(this.checkd = vert), true, true)
 			}
-			onhashchange()
-			document.querySelector('#vert').onchange = _ => {
-				url.hash = document.querySelector('#vert').checked ? 'vert' : ''
-				history.replaceState(null, '', url)
-				onhashchange()
+			for (let a of document.querySelectorAll('a')) {
+				let u = new URL(a.href)
+				a.href = (Url(u, 'tick', ticky, true), Url(u, 'vert', vert, true))
 			}
 		}
 	</script>
@@ -150,8 +162,8 @@
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a>
-			<input id="ticky" type="checkbox" /><label for="ticky">步进</label>
-			<input id="tick" type="range" step="3" value="0" style="display: none" />
+			<input id="ticky" type="checkbox" /><label for="ticky">冲程步进</label>
+			<input id="tick" type="range" value="0" style="display: none" />
 		</nav>
 		<main>
 			<summary>
@@ -245,7 +257,7 @@
 			margin-left: 2rem;
 		}
 		#tick {
-			width: 50rem;
+			width: 40rem;
 		}
 	</style>
 </html>
