@@ -156,6 +156,7 @@
 			</figure>
 		</template>
 		<nav>
+			<aside>外旋轮线<br />转子引擎</aside>
 			<a href="?">对比</a>
 			<a href="?n=2">二角</a>
 			<a href="?n=3">三角</a>
@@ -247,19 +248,26 @@
 			margin: 0;
 		}
 		nav {
-			margin: 0 0 0.3rem;
+			line-height: 1.5rem;
+			white-space: nowrap;
+		}
+		nav * {
+			vertical-align: middle;
+		}
+		aside {
+			float: left;
+			margin: 0 2rem;
 		}
 		a {
 			text-decoration: none;
 			color: #33c;
-			margin-left: 1rem;
+			margin-right: 1rem;
 		}
-		nav input {
-			margin: 0.5rem 0 0 1rem;
+		nav label {
+			margin-right: 1rem;
 		}
 		#tick {
 			width: 50rem;
-			vertical-align: bottom;
 		}
 	</style>
 </html>

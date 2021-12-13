@@ -211,7 +211,7 @@ function Rotor({
 			$$$()
 		}
 		// 画转子接触角
-		function $PBC(T, n = 0, O = P + BP + E, style) {
+		function $PBC(T, n = 0, O = P * 1.1 + BP, style) {
 			$$({ color: '#66c', ...style })
 			$.moveTo(x + PX(T, n, P + BP), y + PY(T, n, P + BP))
 			$.lineTo(x + PX(T, n, O), y + PY(T, n, O))
