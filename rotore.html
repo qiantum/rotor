@@ -166,8 +166,8 @@
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a><br />
-			<input id="vert" type="checkbox" /><label for="vert">竖向</label>
-			<input id="ticky" type="checkbox" /><label for="ticky">冲程步进</label>
+			<label><input id="vert" type="checkbox" />竖向</label>
+			<label><input id="ticky" type="checkbox" />冲程步进</label>
 			<input id="tick" type="range" value="0" disabled />
 		</nav>
 		<main>
@@ -253,7 +253,9 @@
 			line-height: 1.5rem;
 			white-space: nowrap;
 		}
-		nav * {
+		nav > * {
+			display: inline-block;
+			margin-right: 1rem;
 			vertical-align: middle;
 		}
 		aside {
@@ -263,10 +265,10 @@
 		a {
 			text-decoration: none;
 			color: #33c;
-			margin-right: 1rem;
 		}
-		nav label {
-			margin-right: 1rem;
+		label input {
+			margin: 0 0.2rem 0 0;
+			vertical-align: -0.1rem;
 		}
 		#tick {
 			width: 50rem;
