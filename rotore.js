@@ -1,3 +1,6 @@
+// Copyright: Qianyan Cai
+// License: GPL v3
+
 let { min, max, abs, floor, ceil, round, PI, cos, sin, sqrt } = Math
 let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
