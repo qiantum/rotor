@@ -43,7 +43,7 @@
 				for (let ss = 0; ss < rot.NS; ss++) {
 					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
 						Text(Draw(rot, s, Canv(), true), round((s % 1) * ssub))
-					Break()
+					if (ssub >= rot.NS || ss & 1) Break()
 				}
 			} else {
 				for (let N of [2, 3, 5]) {
@@ -162,7 +162,7 @@
 			<a href="?n=4">四角</a>
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
-			<a href="?n=7">七角</a>
+			<a href="?n=7">七角</a><br />
 			<input id="vert" type="checkbox" /><label for="vert">竖向</label>
 			<input id="ticky" type="checkbox" /><label for="ticky">冲程步进</label>
 			<input id="tick" type="range" value="0" disabled />
@@ -255,10 +255,10 @@
 			margin-left: 1rem;
 		}
 		nav input {
-			margin-left: 1rem;
+			margin: 0.5rem 0 0 1rem;
 		}
 		#tick {
-			width: 40rem;
+			width: 50rem;
 			vertical-align: bottom;
 		}
 	</style>
