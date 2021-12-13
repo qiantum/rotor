@@ -9,6 +9,10 @@ let FORMATTER = function (o, f) {
        ${1/3}{} -> 0
 	   ${1/3}{02} -> 00
 	   ${1/3}{ 2} ->  0
+	   ${1/3}{.2} -> .33
+	   ${4/3}{.2} -> 1.3
+	   ${9.999}{.3} -> 10.0
+	   ${999.9}{.3} -> 1000
        ${{a:1/3,b:1/3}}{2} -> {"a":0.33, "b":0.33}
        ${[1/3,1/3]}{2} -> [0.33, 0.33]
     */
@@ -21,7 +25,7 @@ let FORMATTER = function (o, f) {
 		return JSON.stringify(
 			Object.fromEntries(Object.entries(o).map(([k, v]) => [k, FORMATTER(v, f)]))
 		)
-	else if ((match = f.match(/^([ 0])?([1-9]\d*)?(%)?$/))) [match, pad, digi = '0', perc] = match
+	else if ((match = f.match(/^([ 0.])?([1-9]\d*)?(%)?$/))) [match, pad, digi = '0', perc] = match
 	else throw 'error format ' + f
 
 	if (o === null) return 'null'
@@ -30,7 +34,10 @@ let FORMATTER = function (o, f) {
 	if (perc) o *= 100
 	digi = parseFloat(digi)
 	if (pad == null) o = o.toFixed(digi)
-	else o = o.toFixed().padStart(digi, pad)
+	else if (pad != '.') o = o.toFixed().padStart(digi, pad)
+	else if (o.toFixed().length >= digi) o = o.toFixed()
+	else if (o.toFixed(digi).startsWith('0.')) o = o.toFixed(digi).slice(1)
+	else o = o.toPrecision(digi)
 	return o + (perc ? '%' : '')
 }
 

@@ -115,17 +115,17 @@ function Rotor({
 	})
 
 	function params(T) {
-		let p1 = ''
+		let p1 = '__'
 		if (T != null) {
 			let a = (T / TS(1)) * PI
 			let pis = (2 + 1 - sqrt(2 * 2 - sin(a) * sin(a)) - cos(a)) / 2
-			p1 = _`${VQ(T) / V}{2}=${VQ(T) / 100}{03}__(${pis}{2} ${(1 - cos(a)) / 2}{2})__`
+			p1 = _`|${VQ(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VQ(T) / V}{.2}__`
 		}
 		let p2 = T != null ? _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}` : ''
 		return (
-			_`N${N}__K${K}{}__E${E}{}__P${P}__V${V / 100}{}__` +
+			_`N${N}__E${E}{}__P${P}__K${K}{1}__V${V / 100}{}` +
 			p1 +
-			_`${KK}{1}=${VV / 100}{} ${VB / 100}{}__` +
+			_`${VV / 100}{}:${KK}{1} ${VB / 100}{}__` +
 			_`BP${BP}{1} C${(PBCC / PI2) * 360}{}` +
 			p2
 		)
