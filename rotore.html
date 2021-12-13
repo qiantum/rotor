@@ -1,108 +1,15 @@
 <html>
 	<meta charset="utf-8" />
-	<style>
-		body {
-			margin: 0.4rem;
-			background-color: #eee;
-		}
-		body * {
-			vertical-align: bottom;
-		}
-		main {
-			white-space: nowrap;
-		}
-		figure:first-of-type {
-			display: none;
-		}
-		figure {
-			all: unset;
-			display: inline-block;
-			position: relative;
-			margin: 0.4rem;
-		}
-		figure canvas {
-			background-color: #fff;
-		}
-		figure div {
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			z-index: 10;
-			display: grid;
-			grid-template: auto / auto auto;
-			place-content: space-between space-between;
-		}
-		figure pre {
-			margin: 0;
-			font-size: 14px;
-		}
-		figure pre:nth-child(2),
-		figure pre:nth-child(4) {
-			text-align: right;
-		}
-		a {
-			text-decoration: none;
-			color: #33c;
-			margin-left: 1rem;
-		}
-		#ticky {
-			margin-left: 2rem;
-		}
-		#tick {
-			width: 50rem;
-		}
-		body > pre {
-			display: inline-block;
-			text-align: right;
-		}
-	</style>
-	<body>
-		<nav>
-			<a href="?">对比</a>
-			<a href="?n=2">二角</a>
-			<a href="?n=3">三角</a>
-			<a href="?n=4">四角</a>
-			<a href="?n=5">五角</a>
-			<a href="?n=6">六角</a>
-			<a href="?n=7">七角</a>
-			<input id="ticky" type="checkbox" onchange="Ticky()" /><label for="ticky">步进</label>
-			<input id="tick" type="range" step="3" oninput="Tick()" style="display: none" />
-		</nav>
-		<main>
-			<figure>
-				<canvas></canvas>
-				<div>
-					<pre></pre>
-					<pre></pre>
-					<pre></pre>
-					<pre></pre>
-				</div>
-			</figure>
-		</main>
-		<p>请使用最新版浏览器，支持canvas画图。参数说明：</p>
-		<pre>转子旋转角(绿腰线)
-<!--	--->曲轴旋转角(转子节圆远端)
-<!--	--->N 转子顶角数
-<!--	--->E 偏心距
-<!--	--->P 转子顶半径
-<!--	--->K 压缩比、膨胀比
-<!--	--->V 工作容积(单区最大-最小) | 绿腰线容积(当前-最小)
-<!--	--->2倍连杆活塞比 | 余弦比 | 绿腰线比(当前与工作容积比)
-<!--	--->总容积(排量、缸体-转子) : 与工作容积比 | 缸体体积
-<!--	--->BP 缸体转子间隙 C 最大接触角(缸体法线夹转子顶径线) | 当前接触角
-<!-----></pre>
-		<script src="./format.js"></script>
-		<script src="./rotore.js"></script>
-		<script>
-			if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
+	<script src="./format.js"></script>
+	<script src="./rotore.js"></script>
+	<script>
+		if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
+		function Onload() {
 			let url = new URL(location)
-			let show = url.searchParams
+			let mode = url.searchParams
 			let main = document.querySelector('main')
-			let ticky = (document.querySelector('#ticky').checked = show.get('tick') != null)
-			let tick = ticky ? document.querySelector('#tick') : null
-			tick && ((tick.style = 'display:'), (tick.value = 0))
+			let ticky = mode.get('tick') != null
+			let tick = document.querySelector('#tick')
 
 			//let { min, max, floor, round, ceil } = Math
 			let sname = ['I', 'C', 'P', 'E']
@@ -111,9 +18,9 @@
 			//let scolor = ['#a6f0a356', '#dcecff', '#ffc0c05c', '#e7e6ec']
 			let scolor = ['#dcf9dc', '#dcecff', '#ffe9e6', '#e7e6ec']
 			//let slight = ['#f0fff0', '#f6f9ff', '#fff6f6', '#f6f5f7']
-			let sdual = show.get('.2') != null
-			let size = show.get('size') ?? 360
-			let conf = { N: show.get('n') | 0, size }
+			let sdual = mode.get('.2') != null
+			let size = mode.get('size') ?? 360
+			let conf = { N: mode.get('n') | 0, size }
 			let ticks = []
 
 			if (ticky) {
@@ -122,16 +29,16 @@
 						ticks.push([new Rotor({ ...conf, N, P }), Canv()])
 					tick.max = max(tick.max, ticks.at(-1)[0].NS * 360 - tick.step)
 				}
-				main.appendChild(document.createElement('br'))
+				Break()
 				for (let t of ticks) Text(DrawSS(t[0], Canv()))
-				Tick()
+				Break(), Tick()
 			} else if (conf.N >= 2) {
 				let rot = new Rotor({ ...conf })
 				let ssub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
 				for (let ss = 0; ss < rot.NS; ss++) {
 					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
 						Text(Draw(rot, s, Canv(), true), round((s % 1) * ssub))
-					main.appendChild(document.createElement('br'))
+					Break()
 				}
 			} else {
 				for (let N of [2, 3, 5]) {
@@ -140,7 +47,7 @@
 					Text(DrawSS(rot, Canv()))
 					rot = new Rotor({ ...conf, N, P: 0 })
 					Text(DrawSS(rot, Canv()))
-					main.appendChild(document.createElement('br'))
+					Break()
 				}
 			}
 
@@ -166,14 +73,25 @@
 				$.param()
 				return (canv.rot = rot), delete canv.s, canv
 			}
+			function Tick() {
+				let s = (tick.value | 0) / 360
+				for (let t of ticks) {
+					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
+					Text(Draw(t[0], s, t[1], true))
+				}
+			}
+			;(tick.style = ticky ? '' : 'display:none'), (tick.oninput = Tick)
+
 			function Canv() {
-				let fig = document.createElement('figure')
-				fig.innerHTML = main.querySelector('figure').innerHTML
+				let fig = document.querySelector('template').content.cloneNode(true)
 				let canvas = fig.querySelector('canvas')
 				canvas.width = canvas.height = size
 				let text = fig.querySelectorAll('pre')
-				main.appendChild(fig)
+				main.insertBefore(fig, main.lastElementChild)
 				return { canvas, text, param: text[3] }
+			}
+			function Break() {
+				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
 			function Text(canv, ...texts) {
 				let t = canv.text
@@ -193,18 +111,141 @@
 				return { color: color[floor(s).mod(sname.length)] }
 			}
 
-			function Ticky() {
+			document.querySelector('#ticky').checked = ticky
+			document.querySelector('#ticky').onchange = _ => {
 				document.querySelector('#ticky').checked = ticky
-				ticky ? show.delete('tick') : show.append('tick', '')
+				ticky ? mode.delete('tick') : mode.append('tick', '')
 				location.href = url
 			}
-			function Tick() {
-				let s = (tick.value | 0) / 360
-				for (let t of ticks) {
-					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
-					Text(Draw(t[0], s, t[1], true))
-				}
+			onhashchange = _ => {
+				let v = (document.querySelector('#vert').checked = url.hash.includes('vert'))
+				document.body.className = v ? 'vert' : ''
 			}
-		</script>
+			onhashchange()
+			document.querySelector('#vert').onchange = _ => {
+				url.hash = document.querySelector('#vert').checked ? 'vert' : ''
+				history.replaceState(null, '', url)
+				onhashchange()
+			}
+		}
+	</script>
+	<body onload="Onload()">
+		<template>
+			<figure>
+				<canvas></canvas>
+				<div>
+					<pre></pre>
+					<pre></pre>
+					<pre></pre>
+					<pre></pre>
+				</div>
+			</figure>
+		</template>
+		<nav>
+			<input id="vert" type="checkbox" /><label for="vert">竖向</label>
+			<a href="?">对比</a>
+			<a href="?n=2">二角</a>
+			<a href="?n=3">三角</a>
+			<a href="?n=4">四角</a>
+			<a href="?n=5">五角</a>
+			<a href="?n=6">六角</a>
+			<a href="?n=7">七角</a>
+			<input id="ticky" type="checkbox" /><label for="ticky">步进</label>
+			<input id="tick" type="range" step="3" value="0" style="display: none" />
+		</nav>
+		<main>
+			<summary>
+				请使用最新版浏览器，支持canvas画图。参数说明：
+				<pre>
+
+<!--			--->转子旋转角(绿腰线)
+<!--			--->曲轴旋转角(转子节圆远端)
+
+<!--			--->N 转子顶角数
+<!--			--->E 偏心距
+<!--			--->P 转子顶半径
+<!--			--->K 压缩比、膨胀比
+<!--			--->V 工作容积(单区最大-最小) | 绿腰线容积(当前-最小)
+<!--			--->2倍连杆活塞比 | 余弦比 | 绿腰线比(当前与工作容积比)
+<!--			--->总容积(排量、缸体-转子) : 与工作容积比 | 缸体体积
+<!--			--->BP 缸体转子间隙 C 最大接触角(缸体法向夹转子顶径向) | 当前接触角
+<!--		---></pre>
+			</summary>
+		</main>
 	</body>
+	<style>
+		body {
+			width: max-content;
+			margin: 0;
+			padding: 0.3rem;
+			background-color: #eee;
+		}
+		main {
+			white-space: nowrap;
+			font-size: 0;
+			width: max-content;
+		}
+		body.vert main {
+			writing-mode: vertical-lr;
+		}
+		main > * {
+			white-space: initial !important;
+			writing-mode: initial !important;
+			font-size: initial !important;
+		}
+		figure {
+			all: unset;
+			display: inline-block;
+			position: relative;
+			margin: 0.3rem;
+		}
+		figure canvas {
+			background-color: #fff;
+		}
+		figure div {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 10;
+			display: grid;
+			grid-template: auto / auto auto;
+			place-content: space-between space-between;
+		}
+		figure pre {
+			margin: 0;
+			font-size: 14px;
+		}
+		figure pre:nth-child(2),
+		figure pre:nth-child(4) {
+			text-align: right;
+		}
+		summary {
+			display: inline-block;
+			width: min-content;
+			text-align: center;
+			padding: 0.5rem;
+		}
+		summary pre {
+			display: inline-block;
+			text-align: right;
+			margin: 0;
+		}
+		nav {
+			vertical-align: bottom;
+			margin: 0 0 0.3rem;
+		}
+		a {
+			text-decoration: none;
+			color: #33c;
+			margin-left: 1rem;
+		}
+		#ticky {
+			margin-left: 2rem;
+		}
+		#tick {
+			width: 50rem;
+		}
+	</style>
 </html>
