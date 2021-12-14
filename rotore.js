@@ -6,13 +6,13 @@ let PI2 = (Math.PI2 = PI + PI)
 let EPSI = (Number.EPSILON = 1 / (1 << 12))
 let gcd, lcm, atan, dist, diff, diffabs, cross, area, matran
 
-// 外旋轮线转子引擎 Epitrochoid Rotor Engine
+// 外旋轮线转子引擎 Epitrochoid Rotorary Engine
 function Rotor({
 	N, // 转子顶角数
 	E, // 偏心距
-	P = (N + 0.5) * 0.4, // 转子顶半径 / 偏心距
+	P = 1 + sqrt(N - 2) * 0.9, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
-	BP = 1.25, // 缸体转子间隙 / 顶半径 %
+	BP = 1.18, // 缸体转子间隙 / 顶半径 %
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
@@ -24,7 +24,7 @@ function Rotor({
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
-	E = round((E ?? (size * 0.345) / (N + P + 2.3)) * 8) / 8 // 偏心距
+	E = round((E ?? (size * 0.335) / (N + P + 2.2)) * 4) / 4 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
 	let G = E * N // 转子大节圆半径
 	let g = G - E // 曲轴小节圆半径
@@ -118,11 +118,12 @@ function Rotor({
 		return s.push(s[0]), s
 	})
 
+	// 参数显示
 	function params(T) {
 		let p1 = '__'
 		if (T != null) {
 			let a = (T / TS(1)) * PI
-			let pis = (2 + 1 - sqrt(2 * 2 - sin(a) * sin(a)) - cos(a)) / 2
+			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
 			p1 = _`|${VQ(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VQ(T) / V}{.2}__`
 		}
 		let p2 = T != null ? _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}` : ''
