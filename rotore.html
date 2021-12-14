@@ -139,7 +139,7 @@
 			document.querySelector('#vert').onchange = function () {
 				Url(url, 'vert', !(this.checkd = vert), true, true)
 			}
-			for (let a of document.querySelectorAll('a')) {
+			for (let a of document.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
 				a.href = (Url(u, 'tick', ticky, true), Url(u, 'vert', vert, true))
 			}
@@ -186,7 +186,7 @@
 <!--			--->总容积(排量、缸体-转子) : 与工作容积比 | 缸体体积
 <!--			--->BP 缸体转子间隙 C 最大接触角(缸体法向夹转子顶径向) | 接触角
 <!--		---></pre>
-				版权所有 蔡倩彦 | 开源许可 GPLv3
+				版权所有 <a href="http://qiantum.com">蔡倩彦</a> | 开源许可 GPLv3
 			</summary>
 		</main>
 	</body>
