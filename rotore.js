@@ -10,13 +10,13 @@ let gcd, lcm, atan, dist, diff, diffabs, cross, area, matran
 function Rotor({
 	N, // 转子顶角数
 	E, // 偏心距
-	P = 1 + sqrt(N - 2) * 0.9, // 转子顶半径 / 偏心距
+	P = N == 2 ? 1.4 : N == 3 ? 1.9 : 1.1 + N * 0.28, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
 	BP = 1.18, // 缸体转子间隙 / 顶半径 %
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
-	if ((N |= 0) < 2) throw 'err N'
+	if (N != (N |= 0) || N < 2) throw 'err N'
 	let NB = N - 1 // 缸体顶数
 	let NBS = NB + NB // 缸体冲程数
 	let NS = lcm(NBS, 4) // 完整循环冲程数
@@ -24,7 +24,7 @@ function Rotor({
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
-	E = round((E ?? (size * 0.335) / (N + P + 2.2)) * 4) / 4 // 偏心距
+	E = round((E ?? (size * 0.313) / (P + N + 1.75)) * 4) / 4 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
 	let G = E * N // 转子大节圆半径
 	let g = G - E // 曲轴小节圆半径
