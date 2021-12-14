@@ -12,7 +12,7 @@ function Rotor({
 	E, // 偏心距
 	P = (N + 0.5) * 0.4, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
-	BP = 2, // 缸体转子间隙 / 顶半径 %
+	BP = 1.7, // 缸体转子间隙 / 顶半径 %
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
@@ -86,11 +86,11 @@ function Rotor({
 
 	let Vmin = area(Qt.map(BB.At()).concat([...R(0, Qt)].reverse())) // 最小容积 == VQ(0, 0, true)
 	// 转子腰线容积
-	function VQ(T, n = 0, noV0) {
+	function VQ(T, n = 0, withMin) {
 		let t = tQB(T, n) // 为0相当于Qt，为tS(1)相当于BPt
 		let b = [...Array.seq(t - tPQ, t + tPQ, tickn)].map(BB.At())
 		let v = area(b.concat([...R(T, Qt)].reverse()))
-		return round(noV0 ? v : v - Vmin)
+		return round(withMin ? v : v - Vmin)
 	}
 
 	let V = VQ(TS(1)) // 工作容积
