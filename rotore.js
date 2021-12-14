@@ -12,7 +12,7 @@ function Rotor({
 	E, // 偏心距
 	P = (N + 0.5) * 0.4, // 转子顶半径 / 偏心距
 	Q = P, // 转子腰半径 / 偏心距
-	BP = 1.7, // 缸体转子间隙 / 顶半径 %
+	BP = 1.25, // 缸体转子间隙 / 顶半径 %
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
@@ -24,7 +24,8 @@ function Rotor({
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
-	E ??= round((size * 0.6875) / (N + P + 2.3)) / 2 // 偏心距
+	E = round((E ?? (size * 0.345) / (N + P + 2.3)) * 8) / 8 // 偏心距
+	if ((E | 0) < 1) throw 'err E'
 	let G = E * N // 转子大节圆半径
 	let g = G - E // 曲轴小节圆半径
 	P = round(E * (P + N + 2)) // 转子顶半径
@@ -126,7 +127,7 @@ function Rotor({
 		}
 		let p2 = T != null ? _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}` : ''
 		return (
-			_`N${N}__E${E}{}__P${P}__K${K}{1}__V${V / 100}{}` +
+			_`N${N}__E${E}{}__P${P}{}__K${K}{1}__V${V / 100}{}` +
 			p1 +
 			_`${VV / 100}{}:${KK}{1} ${VB / 100}{}__` +
 			_`BP${BP}{1} C${(PBCC / PI2) * 360}{}` +
@@ -166,7 +167,7 @@ function Rotor({
 		}
 		// 画转子大圆凸包
 		function $GG(style) {
-			$$({ color: '#999', opa: '5', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
+			$$({ color: '#ddd', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
 		}
 		// 画转子顶
 		function $P(T, n = 0, O, style) {
