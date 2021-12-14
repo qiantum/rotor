@@ -10,6 +10,7 @@
 			let url = new URL(location)
 			let mode = url.searchParams
 			let main = document.querySelector('main')
+			let eqvv = mode.get('eqvv') != null
 			let ticky = mode.get('tick') != null
 			let tick = document.querySelector('#tick')
 
@@ -28,7 +29,7 @@
 			if (ticky) {
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
 					for (let P of conf.N >= 2 ? [undefined, 0, 1, 2] : [undefined])
-						ticks.push([new Rotor({ ...conf, N, P })])
+						ticks.push([Rot(N, P)])
 					tick.max = max(tick.max, 720 + (ticks.at(-1)[0].NS - 4) * 40)
 				}
 				for (let t of ticks.slice(0, ceil(ticks.length / 2))) t[1] = Canv()
@@ -38,7 +39,7 @@
 				for (let t of ticks.slice(ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
 				Break(), Tick()
 			} else if (conf.N >= 2) {
-				let rot = new Rotor({ ...conf })
+				let rot = Rot()
 				let ssub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
 				for (let ss = 0; ss < rot.NS; ss++) {
 					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
@@ -47,13 +48,20 @@
 				}
 			} else {
 				for (let N of [2, 3, 4, 5]) {
-					let rot = new Rotor({ ...conf, N })
+					let rot = Rot(N)
 					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
 					Text(DrawSS(rot, Canv()))
-					rot = new Rotor({ ...conf, N, P: 0 })
-					Text(DrawSS(rot, Canv()))
+					Text(DrawSS(Rot(N, 0), Canv()))
 					Break()
 				}
+			}
+			function Rot(N, P) {
+				let rot = new Rotor({ ...conf, N, P })
+				if (eqvv) {
+					let e = sqrt(12400 / rot.VV)
+					rot = new Rotor({ ...conf, N, E: rot.E * e, P, BP: 150 / rot.P / e })
+				}
+				return rot
 			}
 
 			function Draw(rot, s, canv, p) {
@@ -122,26 +130,32 @@
 				return { color: color[floor(s).mod(sname.length)] }
 			}
 
-			function Url(url, k, v, bool, replace) {
-				if (bool) v ? url.searchParams.set(k, '') : url.searchParams.delete(k)
+			function Url(url, k, ok, v, replace) {
+				if (ok != null) ok ? url.searchParams.set(k, v ?? '') : url.searchParams.delete(k)
 				else v != null ? url.searchParams.set(k, v) : url.searchParams.delete(k)
 				url.searchParams.sort()
 				if (replace) history.replaceState(null, '', url), location.reload()
 				return url
 			}
+			document.querySelector('#eqvv').checked = eqvv
+			document.querySelector('#eqvv').onchange = function () {
+				Url(url, 'eqvv', !(this.checked = eqvv), null, true)
+			}
 			document.querySelector('#ticky').checked = ticky
+			ticky ? document.body.classList.add('ticky') : document.body.classList.remove('ticky')
 			document.querySelector('#ticky').onchange = function () {
-				Url(url, 'tick', !(this.checked = ticky), true, true)
+				Url(url, 'tick', !(this.checked = ticky), null, true)
 			}
 			let vert = mode.get('vert') != null
 			document.querySelector('#vert').checked = vert
-			document.body.className = vert ? 'vert' : ''
+			vert ? document.body.classList.add('vert') : document.body.classList.remove('vert')
 			document.querySelector('#vert').onchange = function () {
-				Url(url, 'vert', !(this.checkd = vert), true, true)
+				Url(url, 'vert', !(this.checkd = vert), null, true)
 			}
 			for (let a of document.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
-				a.href = (Url(u, 'tick', ticky, true), Url(u, 'vert', vert, true))
+				Url(u, 'eqvv', eqvv), Url(u, 'tick', ticky), Url(u, 'vert', vert)
+				a.href = u
 			}
 		}
 	</script>
@@ -165,7 +179,8 @@
 			<a href="?n=4">四角</a>
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
-			<a href="?n=7">七角</a><br />
+			<a href="?n=7">七角</a>
+			<label><input id="eqvv" type="checkbox" />等排量125</label><br />
 			<label><input id="vert" type="checkbox" />竖向</label>
 			<label><input id="ticky" type="checkbox" />冲程步进</label>
 			<input id="tick" type="range" value="0" disabled />
@@ -194,13 +209,14 @@
 		body {
 			width: max-content;
 			margin: 0;
-			padding: 0.3rem;
+			padding: 0;
 			background-color: #eee;
 		}
 		main {
+			margin-top: 3.3rem;
+			width: max-content;
 			white-space: nowrap;
 			font-size: 0;
-			width: max-content;
 		}
 		body.vert main {
 			writing-mode: vertical-lr;
@@ -250,8 +266,18 @@
 			margin: 0.7rem 0;
 		}
 		nav {
+			position: absolute;
+			z-index: 100;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 3.5rem;
 			line-height: 1.5rem;
 			white-space: nowrap;
+			background: inherit;
+		}
+		body.ticky nav {
+			position: fixed;
 		}
 		nav > * {
 			display: inline-block;
