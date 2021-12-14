@@ -46,7 +46,7 @@
 					if (ssub >= rot.NS || ss & 1) Break()
 				}
 			} else {
-				for (let N of [2, 3, 5]) {
+				for (let N of [2, 3, 4, 5]) {
 					let rot = new Rotor({ ...conf, N })
 					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
 					Text(DrawSS(rot, Canv()))
