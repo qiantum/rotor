@@ -22,7 +22,7 @@
 			let scolor = ['#dcf9dc', '#dcecff', '#ffe9e6', '#e7e6ec']
 			//let slight = ['#f0fff0', '#f6f9ff', '#fff6f6', '#f6f5f7']
 			let sdual = mode.get('.2') != null
-			let size = mode.get('size') ?? 360
+			let size = mode.get('size') ?? 320
 			let conf = { N: mode.get('n') | 0, size }
 			let ticks = []
 
@@ -30,7 +30,7 @@
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
 					for (let P of conf.N >= 2 ? [undefined, 0, 1, 2] : [undefined])
 						ticks.push([Rot({ N, P })])
-					tick.max = max(tick.max, 720 + (ticks.at(-1)[0].NS - 4) * 40)
+					tick.max = max(tick.max, 900 + (ticks.at(-1)[0].NS - 4) * 40)
 				}
 				for (let t of ticks.slice(0, ceil(ticks.length / 2))) t[1] = Canv()
 				for (let t of ticks.slice(0, ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
@@ -58,8 +58,8 @@
 			function Rot(con) {
 				let rot = new Rotor({ ...conf, ...con })
 				if (eqvv) {
-					let e = sqrt(12400 / rot.VV)
-					rot = new Rotor({ ...conf, ...con, E: rot.E * e, BP: 150 / rot.P / e })
+					let e = sqrt(14500 / rot.VV)
+					rot = new Rotor({ ...conf, ...con, E: rot.E * e, BP: 122 / rot.P / e })
 				}
 				return rot
 			}
@@ -88,7 +88,7 @@
 			}
 			function Tick() {
 				let s = tick.value | 0
-				s = s <= 720 ? s / 180 : 4 + (s - 720) / 40
+				s = s <= 900 ? s / 180 : 4 + (s - 900) / 40
 				for (let t of ticks) {
 					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
 					Text(Draw(t[0], s, t[1], true))
@@ -180,7 +180,7 @@
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a>
-			<label><input id="eqvv" type="checkbox" />等排量125</label><br />
+			<label><input id="eqvv" type="checkbox" />等排量</label><br />
 			<label><input id="vert" type="checkbox" />竖向</label>
 			<label><input id="ticky" type="checkbox" />冲程步进</label>
 			<input id="tick" type="range" value="0" disabled />
@@ -197,7 +197,7 @@
 <!--			--->P 转子顶半径
 <!--			--->K 压缩比、膨胀比
 <!--			--->V 工作容积(单区最大-最小) | 绿腰线容积(当前-最小)
-<!--			--->2倍连杆活塞比 | 余弦比 | 绿腰线比(当前与工作容积比)
+<!--			--->3倍连杆比 | 余弦比 | 绿腰线比(当前与工作容积比)
 <!--			--->总容积(排量、缸体-转子) : 与工作容积比 | 缸体体积
 <!--			--->BP 缸体转子间隙 C 最大接触角(缸体法向夹转子顶径向) | 接触角
 <!--		---></pre>
@@ -206,6 +206,9 @@
 		</main>
 	</body>
 	<style>
+		html {
+			font-size: 15px;
+		}
 		body {
 			width: max-content;
 			margin: 0;
@@ -213,7 +216,7 @@
 			background-color: #eee;
 		}
 		main {
-			margin-top: 3.3rem;
+			margin-top: 3.6rem;
 			width: max-content;
 			white-space: nowrap;
 			font-size: 0;
@@ -224,7 +227,7 @@
 		main > * {
 			white-space: initial !important;
 			writing-mode: initial !important;
-			font-size: initial !important;
+			font-size: 1rem !important;
 		}
 		figure {
 			all: unset;
@@ -248,7 +251,7 @@
 		}
 		figure pre {
 			margin: 0;
-			font-size: 14px;
+			font-size: 13px;
 		}
 		figure pre:nth-child(2),
 		figure pre:nth-child(4) {
@@ -257,13 +260,14 @@
 		summary {
 			display: inline-block;
 			width: min-content;
-			text-align: center;
 			padding: 0.5rem;
+			text-align: center;
 		}
 		summary pre {
 			display: inline-block;
-			text-align: right;
 			margin: 0.7rem 0;
+			font-size: 13.5px;
+			text-align: right;
 		}
 		nav {
 			position: absolute;
@@ -271,7 +275,8 @@
 			top: 0;
 			left: 0;
 			width: 100%;
-			height: 3.5rem;
+			height: 3.4rem;
+			padding: 0.2rem 0 0;
 			line-height: 1.5rem;
 			white-space: nowrap;
 			background: inherit;
