@@ -75,8 +75,8 @@ function Rotor({
 	function* RBT(B, TT) {
 		if (typeof B == 'number')
 			for (let T of TT) {
-				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(T * (N - 1))
-				let Y = P * sin(B + T) - E * sin(B * N + T) + E * sin(T * (N - 1))
+				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(T * NB)
+				let Y = P * sin(B + T) - E * sin(B * N + T) + E * sin(T * NB)
 				yield [atan(X, Y), dist(X, Y), X, Y] // 角[0,PI2) B==0 沿T严格递增 B>0 沿T循环严格递增
 			}
 		else for (let b of B) yield RBT(b, TT)
