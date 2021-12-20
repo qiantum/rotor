@@ -276,9 +276,13 @@ dist = (x, y) => Math.sqrt(x * x + y * y)
 diff = v => (((v %= PI2) + v) % PI2) - v // [-PI,PI)
 diffabs = v => abs(diff(v)) // [0,PI] ((v = abs(v) % PI2) > PI ? PI2 - v : v)
 
-Array.prototype.At = function () {
-	return this.at.bind(this)
+Array.prototype.at ??= function (i) {
+	return this[(i |= 0) >= 0 ? i : this.length + i]
 }
+Array.prototype.At = function () {
+	return i => this[(i |= 0) >= 0 ? i : this.length + i]
+}
+
 // [from,to]序列
 Array.seq = function* (from, to, wrap, oneAll) {
 	if (wrap == null) for (; from <= to; from++) yield from
