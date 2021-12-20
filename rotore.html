@@ -9,10 +9,11 @@
 		function Onload() {
 			let url = new URL(location)
 			let mode = url.searchParams
-			let main = document.querySelector('main')
+			let body = document.body
+			let main = body.querySelector('main')
 			let eqvv = mode.get('eqvv') != null
 			let ticky = mode.get('tick') != null
-			let tick = document.querySelector('#tick')
+			let tick = body.querySelector('#tick')
 
 			//let { min, max, floor, round, ceil, PI } = Math, PI2 = PI+PI
 			let sname = ['I', 'C', 'P', 'E']
@@ -98,7 +99,7 @@
 			ticky && tick.focus()
 
 			function Canv() {
-				let $ = document.querySelector('template').content.cloneNode(true)
+				let $ = body.querySelector('template').content.cloneNode(true)
 				let canvas = $.querySelector('canvas')
 				canvas.width = canvas.height = size
 				let text = $.querySelectorAll('pre')
@@ -137,22 +138,21 @@
 				if (replace) history.replaceState(null, '', url), location.reload()
 				return url
 			}
-			document.querySelector('#eqvv').checked = eqvv
-			document.querySelector('#eqvv').onchange = function () {
+			body.querySelector('#eqvv').checked = eqvv
+			body.querySelector('#eqvv').onchange = function () {
 				Url(url, 'eqvv', !(this.checked = eqvv), null, true)
 			}
-			document.querySelector('#ticky').checked = ticky
-			ticky ? document.body.classList.add('ticky') : document.body.classList.remove('ticky')
-			document.querySelector('#ticky').onchange = function () {
+			body.querySelector('#ticky').checked = ticky
+			body.querySelector('#ticky').onchange = function () {
 				Url(url, 'tick', !(this.checked = ticky), null, true)
 			}
 			let vert = mode.get('vert') != null
-			document.querySelector('#vert').checked = vert
-			vert ? document.body.classList.add('vert') : document.body.classList.remove('vert')
-			document.querySelector('#vert').onchange = function () {
+			vert ? body.classList.add('vert') : body.classList.remove('vert')
+			body.querySelector('#vert').checked = vert
+			body.querySelector('#vert').onchange = function () {
 				Url(url, 'vert', !(this.checkd = vert), null, true)
 			}
-			for (let a of document.querySelectorAll('nav a')) {
+			for (let a of body.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
 				Url(u, 'eqvv', eqvv), Url(u, 'tick', ticky), Url(u, 'vert', vert)
 				a.href = u
@@ -181,7 +181,8 @@
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a>
 			<label><input id="eqvv" type="checkbox" />等排量</label>
-			<label><input id="vert" type="checkbox" />竖向</label><br />
+			<label><input id="vert" type="checkbox" />竖向</label>
+			<hr />
 			<label><input id="ticky" type="checkbox" />冲程步进</label>
 			<input id="tick" type="range" value="0" disabled />
 		</nav>
@@ -208,21 +209,20 @@
 	<style>
 		html {
 			font-size: 15px;
+			width: max-content;
 		}
 		body {
-			width: max-content;
 			margin: 0;
 			padding: 0;
 			background-color: #eee;
 		}
-		main {
-			margin-top: 3.6rem;
-			width: max-content;
-			white-space: nowrap;
-			font-size: 0;
-		}
 		body.vert main {
 			writing-mode: vertical-lr;
+		}
+		main {
+			padding: 0.2rem;
+			white-space: nowrap;
+			font-size: 0;
 		}
 		main > * {
 			white-space: initial !important;
@@ -270,38 +270,40 @@
 			text-align: right;
 		}
 		nav {
-			position: absolute;
+			position: sticky;
 			z-index: 100;
+			box-sizing: border-box;
 			top: 0;
 			left: 0;
-			width: 100%;
-			height: 3.4rem;
-			padding: 0.2rem 0 0;
-			line-height: 1.5rem;
-			white-space: nowrap;
+			width: calc(100vw - 1.5rem);
+			min-width: 39rem;
+			max-width: 60rem;
+			padding: 0.2rem 0 0.2rem 8rem;
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0 1rem;
 			background: inherit;
 		}
-		body.ticky nav {
-			position: fixed;
-		}
 		nav > * {
-			display: inline-block;
-			margin-right: 1rem;
-			vertical-align: middle;
+			line-height: 1.5rem;
 		}
 		aside {
-			float: left;
-			margin: 0 2rem;
+			position: absolute;
+			left: 2rem;
+		}
+		hr {
+			all: unset;
+			width: 100%;
 		}
 		a {
 			text-decoration: none;
 			color: #33c;
 		}
-		label input {
+		input {
 			margin: 0 0.2rem 0 0;
 		}
 		#tick {
-			width: 50rem;
+			flex: auto;
 			outline: none;
 		}
 	</style>
