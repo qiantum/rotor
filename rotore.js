@@ -173,7 +173,7 @@ function RotorE({
 		}
 		// 画转子腰
 		function $Q(T, n = 0, O, style) {
-			$$({ color: '#0f0', ...style })
+			$$({ color: '#f33', ...style })
 			$.moveTo(x + QX(T, n), y + QY(T, n)), $.lineTo(x + QX(T, n, O), y + QY(T, n, O))
 			$$$()
 		}
@@ -185,9 +185,9 @@ function RotorE({
 		function $QN(T, O = [0, G], style) {
 			for (let n = 0; n < N; n++) $Q(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
 		}
-		// 画转子腰包络
+		// 画转子腰旋转线
 		function $QQ(style) {
-			$$({ color: '#9f9', ...style })
+			$$({ color: '#fbb', ...style })
 			for (let T of Tick_) (T ? $.lineTo : $.moveTo).call($, x + QX(T), y + QY(T))
 			$$$()
 		}

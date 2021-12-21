@@ -68,7 +68,7 @@ function RotorH({
 				let Y = RY(T, R, bq + E)
 				yield [atan(X, Y), dist(X, Y), X, Y] // 角[0,PI2) R==0 沿T严格递增 R>0 沿T循环严格递增
 			}
-		else for (R of R) yield RBT(R)
+		else for (R of R) yield RBT(R, bq)
 	}
 	// 缸体型线、即转子绕曲轴的外包络线
 	let BB = maxDot(RBT(Pt.map(Tick.At())), t => ((t / tBPQ) % 2 == 1 ? BQ : null))
@@ -182,14 +182,14 @@ function RotorH({
 		// 画缸体全部腰
 		function $BQN(style) {
 			if (!RB) return
-			$$({ color: '#0f0', ...style })
+			$$({ color: '#f00', ...style })
 			for (let n = 0, X, Y; n < NB; n++)
 				$.moveTo((X = x + BQX(n)), (Y = y + BQY(n))), $.arc(X, Y, RB, 0, PI2)
 			$$$()
 		}
 		// 画缸体腰包络
 		function $BQQ(style) {
-			$$({ color: '#9f9', ...style })
+			$$({ color: '#fbb', ...style })
 			let to
 			for (let [X, Y] of BQQ) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
