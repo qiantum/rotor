@@ -55,9 +55,9 @@ function RotorE({
 	let S1t = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)] // 冲程1工作线步进，即缸体顶线，此处tickn整倍数
 	// 缸体工作线，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数
 	function St(T, n = 0) {
-		let A1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
-		let A = atan(PX(T, n, P + RB), PY(T, n, P + RB))
-		return [...Array.seq(round(A1.bfind(TB)) % tickn, round(A.bfind(TB)) % tickn, tickn)] // 近似缸体步进
+		let B1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
+		let B = atan(PX(T, n, P + RB), PY(T, n, P + RB))
+		return [...Array.seq(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn)] // 近似缸体步进
 	}
 
 	// 缸体对转子旋转
@@ -96,7 +96,7 @@ function RotorE({
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
 	Object.assign(this, { size, N, NS, E, G, g, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
-	Object.assign(this, { TPQ, TQ, TS, BB, RT, VT })
+	Object.assign(this, { TPQ, TS, BB, RT, VT })
 
 	// 冲程区
 	let SS = [...Array.seq(0, NBS - 1)].map(S => {
