@@ -48,17 +48,16 @@ function RotorE({
 
 	// 缸体型线  E*cos(T*N-PI) + (P+RB)*cos(T), E*cos(T*N-PI) + (P+RB)*cos(T)
 	let BB = Tick_.map(T => [BX(T), BY(T)])
-	// 缸体步进角，非均匀
 	let TB = BB.map(([X, Y]) => atan(X, Y))
-	TB[TB.length - 1] = PI2
+	TB[TB.length - 1] = PI2 // 缸体步进角，非均匀
 
 	let S0t = [...Array.seq(-tPQ, tPQ, tickn)] // 冲程0工作线步进，即转子缸体腰线，此处tickn整倍数
 	let S1t = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)] // 冲程1工作线步进，即缸体顶线，此处tickn整倍数
 	// 缸体工作线，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数
 	function St(T, n = 0) {
-		let A = atan(QX(T, n, P + RB), QY(T, n, P + RB)) // 工作线中点角
-		let t = round(A.bfind(TB)) % tickn
-		return [...Array.seq(t - tPQ, t + tPQ, tickn)] // 近似缸体步进
+		let A1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
+		let A = atan(PX(T, n, P + RB), PY(T, n, P + RB))
+		return [...Array.seq(round(A1.bfind(TB)) % tickn, round(A.bfind(TB)) % tickn, tickn)] // 近似缸体步进
 	}
 
 	// 缸体对转子旋转
@@ -71,9 +70,8 @@ function RotorE({
 			}
 		else for (B of B) yield BRT(B)
 	}
-	// 转子型线、即缸体绕转子心的内包络线
+	// 转子型线、即缸体绕转子心的内包络线 // RT = MinCurve(RBT(Tick, Tick), true)
 	let RT = minDot(BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
-	// let RT = MinCurve(RBT(Tick, Tick), true)
 
 	let V0 = area(S0t.map(BB.At()).concat([...RT(0, S0t)].reverse())) // 最小容积 == VQ(0, 0, true)
 	// 旋转容积
