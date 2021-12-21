@@ -20,8 +20,8 @@ function RotorH({
 	size = ceil(+size || min(size.width, size.height))
 	E = round((E ?? (size * 0.313) / (P + NB + 3)) * 4) / 4 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
-	let g = E * N // 转子小节圆半径
 	let G = E * NB // 缸体大节圆半径
+	let g = E * N // 转子小节圆半径
 	P = round(E * (P + NB + 3)) // 转子顶半径
 	let Q = P - E - E // 转子腰半径
 	RB *= P / 100 // 转子缸体间隙
@@ -98,16 +98,12 @@ function RotorH({
 	let VV = VB - area(RT(0)) // 总容积
 	let KK = VV / V // 总容积比工作容积
 
-	// 转子顶与缸体接触角、及接触步进角
+	// 缸体腰与转子接触角、及接触步进角
 	function RBC(T, n = 0) {
-		let CT = atan(RX(T, TP(n)) + g * cos(T * N), RY(T, TP(n)) + g * sin(T * N))
-		return [CT - T - TP(n) - TPQ, CT]
+		let CT = atan(BQX(n) - G * cos(-T * N), BQY(n) - G * sin(-T * N)) // 两节圆交点--缸体腰点
+		return [diffabs(TBP(n) + TBPQ - CT), CT]
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
-
-	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, NB, N, NS, E, G, g, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
-	Object.assign(this, { TPQ, TS, BB, RT, VT })
 
 	// 转子冲程线步进
 	let BSt = [...Array.seq(0, NRS - 1)].map(S => [
@@ -115,6 +111,10 @@ function RotorH({
 	])
 	// 冲程区
 	let SS = BSt.map((BSt, S) => [...RT(0)])
+
+	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
+	Object.assign(this, { size, NB, N, NS, E, G, g, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { TS, BB, RT, VT })
 
 	// 参数显示
 	function params(T) {
@@ -124,7 +124,7 @@ function RotorH({
 			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
 			p1 = _`|${VT(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VT(T) / V}{.2}__`
 		}
-		let p2 = T != null ? _`|${(diffabs(RBC(T)[0]) / PI2) * 360}{02}` : ''
+		let p2 = T != null ? _`|${(RBC(T)[0] / PI2) * 360}{02}` : ''
 		return (
 			_`NB${NB}__E${E}{}__P${P}{}__K${K}{1}__V${V / 100}{}` +
 			p1 +
@@ -182,10 +182,8 @@ function RotorH({
 		// 画缸体全部腰
 		function $BQN(style) {
 			if (!RB) return
-			$$({ color: '#f00', ...style })
-			for (let n = 0, X, Y; n < NB; n++)
-				$.moveTo((X = x + BQX(n)), (Y = y + BQY(n))), $.arc(X, Y, RB, 0, PI2)
-			$$$()
+			style = { color: '#f00', ...style }
+			for (let n = 0; n < NB; n++) $$(style), $.arc(x + BQX(n), y + BQY(n), RB, 0, PI2), $$$()
 		}
 		// 画缸体腰包络
 		function $BQQ(style) {
@@ -209,14 +207,13 @@ function RotorH({
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
-		// 画转子接触角
-		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {
+		// 画接触角
+		function $RBC(T, n = 0, O = BQ * 0.9 - RB, style) {
 			$$({ color: '#66c', ...style })
-			// $.moveTo(x + PX(T, n, P + RB), y + PY(T, n, P + RB))
-			// $.lineTo(x + PX(T, n, O), y + PY(T, n, O))
-			// let CT = RBC(T, n)[1]
-			// $.moveTo(x + PX(T, n) + cos(CT), y + PY(T, n) + sin(CT))
-			// $.lineTo(x + PX(T, n) + (O - P) * cos(CT), y + PY(T, n) + (O - P) * sin(CT))
+			let CT = RBC(T, n)[1]
+			$.moveTo(x + BQX(n, O), y + BQY(n, O))
+			$.lineTo(x + BQX(n), y + BQY(n))
+			$.lineTo(x + BQX(n) + (O - BQ) * cos(CT), y + BQY(n) + (O - BQ) * sin(CT))
 			$$$()
 		}
 		// 画冲程区

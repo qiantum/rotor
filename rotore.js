@@ -31,18 +31,18 @@ function RotorE({
 	let Tick = (this.Tick = Tick_.slice(0, tickn))
 	let tPQ = tickn / N2 // 转子顶腰步进
 	let TPQ = PI2 / N2 // 转子顶腰夹角
-	let tQ = n => (n * tickn) / N // 转子腰起始步进
-	let TQ = n => (n * PI2) / N // 转子腰起始角
+	let tN = n => (n * tickn) / N // 转子腰起始步进
+	let TN = n => (n * PI2) / N // 转子腰起始角
 	let tS = S => ((S % NBS) * tickn) / NBS // 转子冲程起始步进
 	let TS = S => (S * PI2) / NBS // 转子冲程起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
 	let GY = T => E * sin(T * N) // 转子心Y
-	let PX = (T, n = 0, p = P) => GX(T) + p * cos(T + TQ(n) + TPQ) // 转子顶X
-	let PY = (T, n = 0, p = P) => GY(T) + p * sin(T + TQ(n) + TPQ) // 转子顶Y
-	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TQ(n)) // 转子腰X
-	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TQ(n)) // 转子腰X
+	let PX = (T, n = 0, p = P) => GX(T) + p * cos(T + TN(n) + TPQ) // 转子顶X
+	let PY = (T, n = 0, p = P) => GY(T) + p * sin(T + TN(n) + TPQ) // 转子顶Y
+	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TN(n)) // 转子腰X
+	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TN(n)) // 转子腰X
 	let BX = (T, p = P + RB) => PX(T - TPQ, 0, p) // 缸体点X
 	let BY = (T, p = P + RB) => PY(T - TPQ, 0, p) // 缸体点Y
 
@@ -89,14 +89,10 @@ function RotorE({
 
 	// 转子顶与缸体接触角、及接触步进角
 	function RBC(T, n = 0) {
-		let CT = atan(PX(T, n) + g * cos(T * N), PY(T, n) + g * sin(T * N))
-		return [CT - T - TQ(n) - TPQ, CT]
+		let CT = atan(PX(T, n) - -g * cos(T * N), PY(T, n) - -g * sin(T * N)) // 两节圆交点--转子顶点
+		return [diffabs(T + TN(n) + TPQ - CT), CT]
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
-
-	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NS, E, G, g, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
-	Object.assign(this, { TPQ, TS, BB, RT, VT })
 
 	// 冲程区
 	let SS = [...Array.seq(0, NBS - 1)].map(S => {
@@ -112,6 +108,10 @@ function RotorE({
 		return s.push(s[0]), s
 	})
 
+	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
+	Object.assign(this, { size, N, NS, E, g, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { TS, BB, RT, VT })
+
 	// 参数显示
 	function params(T) {
 		let p1 = '__'
@@ -120,7 +120,7 @@ function RotorE({
 			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
 			p1 = _`|${VT(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VT(T) / V}{.2}__`
 		}
-		let p2 = T != null ? _`|${(diffabs(RBC(T)[0]) / PI2) * 360}{02}` : ''
+		let p2 = T != null ? _`|${(RBC(T)[0] / PI2) * 360}{02}` : ''
 		return (
 			_`N${N}__E${E}{}__P${P}{}__K${K}{1}__V${V / 100}{}` +
 			p1 +
@@ -209,10 +209,9 @@ function RotorE({
 		// 画接触角
 		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {
 			$$({ color: '#66c', ...style })
-			$.moveTo(x + PX(T, n, P + RB), y + PY(T, n, P + RB))
-			$.lineTo(x + PX(T, n, O), y + PY(T, n, O))
 			let CT = RBC(T, n)[1]
-			$.moveTo(x + PX(T, n) + cos(CT), y + PY(T, n) + sin(CT))
+			$.moveTo(x + PX(T, n, O), y + PY(T, n, O))
+			$.lineTo(x + PX(T, n), y + PY(T, n))
 			$.lineTo(x + PX(T, n) + (O - P) * cos(CT), y + PY(T, n) + (O - P) * sin(CT))
 			$$$()
 		}
