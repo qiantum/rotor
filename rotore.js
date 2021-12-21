@@ -31,8 +31,8 @@ function RotorE({
 	let Tick = (this.Tick = Tick_.slice(0, tickn))
 	let tPQ = tickn / N2 // 转子顶腰步进
 	let TPQ = PI2 / N2 // 转子顶腰夹角
-	let tQ = n => (n * tickn) / N // 转子腰点起始步进
-	let TQ = n => (n * PI2) / N // 转子腰点起始角
+	let tQ = n => (n * tickn) / N // 转子腰起始步进
+	let TQ = n => (n * PI2) / N // 转子腰起始角
 	let tS = S => ((S % NBS) * tickn) / NBS // 转子冲程起始步进
 	let TS = S => (S * PI2) / NBS // 转子冲程起始角
 
@@ -43,27 +43,23 @@ function RotorE({
 	let PY = (T, n = 0, p = P) => GY(T) + p * sin(T + TQ(n) + TPQ) // 转子顶Y
 	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TQ(n)) // 转子腰X
 	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TQ(n)) // 转子腰X
-
-	let Qt = [...Array.seq(-tPQ, tPQ, tickn)] // 转子腰线、转子顶对应缸体腰线 步进
+	let BX = (T, p = P + RB) => PX(T - TPQ, 0, p) // 缸体点X
+	let BY = (T, p = P + RB) => PY(T - TPQ, 0, p) // 缸体点Y
 
 	// 缸体型线  E*cos(T*N-PI) + (P+RB)*cos(T), E*cos(T*N-PI) + (P+RB)*cos(T)
-	let BB = Tick_.map(T => [PX(T - TPQ, 0, P + RB), PY(T - TPQ, 0, P + RB)])
+	let BB = Tick_.map(T => [BX(T), BY(T)])
+	// 缸体步进角，非均匀
 	let TB = BB.map(([X, Y]) => atan(X, Y))
-	TB[TB.length - 1] = PI2 // 缸体步进角，非均匀
-	let BPt = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)] // 缸体顶线步进
-	// 缸体冲程线步进
-	let BSt = [...Array.seq(0, NBS - 1)].map(S => [
-		...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true),
-	])
+	TB[TB.length - 1] = PI2
 
-	let TQB = (T, n = 0) => atan(QX(T, n), QY(T, n)) // 转子腰对应缸体角
-	let tQB = (T, n = 0, int = round) => int(TQB(T, n).bfind(TB)) % tickn // 转子腰对应缸体步进
-	// 转子顶与缸体接触角、及接触步进角
-	function PBC(T, n = 0) {
-		let CT = atan(PX(T, n) + g * cos(T * N), PY(T, n) + g * sin(T * N))
-		return [CT - T - TQ(n) - TPQ, CT]
+	let S0t = [...Array.seq(-tPQ, tPQ, tickn)] // 冲程0工作线步进，即转子缸体腰线，此处tickn整倍数
+	let S1t = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)] // 冲程1工作线步进，即缸体顶线，此处tickn整倍数
+	// 缸体工作线，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数
+	function St(T, n = 0) {
+		let A = atan(QX(T, n, P + RB), QY(T, n, P + RB)) // 工作线中点角
+		let t = round(A.bfind(TB)) % tickn
+		return [...Array.seq(t - tPQ, t + tPQ, tickn)] // 近似缸体步进
 	}
-	let PBCC = max(...Tick.map(T => PBC(T)[0])) // 最大接触角
 
 	// 缸体对转子旋转
 	function* BRT(B) {
@@ -76,39 +72,45 @@ function RotorE({
 		else for (B of B) yield BRT(B)
 	}
 	// 转子型线、即缸体绕转子心的内包络线
-	let RT = minDot(BRT(Qt.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+	let RT = minDot(BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 	// let RT = MinCurve(RBT(Tick, Tick), true)
 
-	let Vmin = area(Qt.map(BB.At()).concat([...RT(0, Qt)].reverse())) // 最小容积 == VQ(0, 0, true)
-	// 转子腰线容积
-	function VQ(T, n = 0, withMin) {
-		let t = tQB(T, n) // 为0相当于Qt，为tS(1)相当于BPt
-		let b = [...Array.seq(t - tPQ, t + tPQ, tickn)].map(BB.At())
-		let v = area(b.concat([...RT(T, Qt)].reverse()))
-		return round(withMin ? v : v - Vmin)
+	let V0 = area(S0t.map(BB.At()).concat([...RT(0, S0t)].reverse())) // 最小容积 == VQ(0, 0, true)
+	// 旋转容积
+	function VT(T, n = 0, withMin) {
+		let st = St(T, n)
+		let v = area(st.map(BB.At()).concat([...RT(T, S0t)].reverse()))
+		return round(withMin ? v : v - V0)
 	}
-
-	let V = VQ(TS(1)) // 工作容积
-	let K = V / Vmin + 1 // 容积比，即压缩比、膨胀比
+	let V = VT(TS(1)) // 工作容积
+	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
 	let VB = area(BB) // 总体积
 	let KB = VB / V // 总体积比工作容积
 	let VV = VB - area(RT(0)) // 总容积
 	let KK = VV / V // 总容积比工作容积
 
+	// 转子顶与缸体接触角、及接触步进角
+	function RBC(T, n = 0) {
+		let CT = atan(PX(T, n) + g * cos(T * N), PY(T, n) + g * sin(T * N))
+		return [CT - T - TQ(n) - TPQ, CT]
+	}
+	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
+
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NS, E, G, g, P, Q, RB, V, K, VV, KK, VB, KB, PBCC })
-	Object.assign(this, { TPQ, TQ, TS, BB, RT, VQ })
+	Object.assign(this, { size, N, NS, E, G, g, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { TPQ, TQ, TS, BB, RT, VT })
 
 	// 冲程区
-	let SS = BSt.map((BSt, S) => {
+	let SS = [...Array.seq(0, NBS - 1)].map(S => {
 		function* RR(T) {
-			for (let [X, Y] of RT(T, Qt)) yield [atan(X, Y), dist(X, Y), X, Y]
+			for (let [X, Y] of RT(T, S0t)) yield [atan(X, Y), dist(X, Y), X, Y]
 		}
 		function* TT() {
 			for (let t of Array.seq(tS(S), tS(S + 1), tickn, true)) yield RR(Tick_[t])
 		}
-		let s = [...minDot(TT(), null, TB, BSt)(0, BSt, 0, 0)]
-		s = BSt.map(BB.At()).concat(s.reverse())
+		let st = [...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
+		let s = [...minDot(TT(), null, TB, st)(0, st, 0, 0)]
+		s = st.map(BB.At()).concat(s.reverse())
 		return s.push(s[0]), s
 	})
 
@@ -118,18 +120,18 @@ function RotorE({
 		if (T != null) {
 			let a = (T / TS(1)) * PI
 			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
-			p1 = _`|${VQ(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VQ(T) / V}{.2}__`
+			p1 = _`|${VT(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VT(T) / V}{.2}__`
 		}
-		let p2 = T != null ? _`|${(diffabs(PBC(T)[0]) / PI2) * 360}{02}` : ''
+		let p2 = T != null ? _`|${(diffabs(RBC(T)[0]) / PI2) * 360}{02}` : ''
 		return (
 			_`N${N}__E${E}{}__P${P}{}__K${K}{1}__V${V / 100}{}` +
 			p1 +
 			_`${VV / 100}{}:${KK}{1} ${VB / 100}{}__` +
-			_`RB${RB}{1} C${(PBCC / PI2) * 360}{}` +
+			_`RB${RB}{1} C${(RBCC / PI2) * 360}{}` +
 			p2
 		)
 	}
-	console.log(...params().split('__'), _`Vmin${Vmin / 100}{1} tn${tickn}`)
+	console.log(...params().split('__'), _`Vmin${V0 / 100}{1} tn${tickn}`)
 
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')
@@ -185,7 +187,7 @@ function RotorE({
 		function $QN(T, O = [0, G], style) {
 			for (let n = 0; n < N; n++) $Q(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
 		}
-		// 画转子腰凸包
+		// 画转子腰包络
 		function $QQ(style) {
 			$$({ color: '#9f9', ...style })
 			for (let T of Tick_) (T ? $.lineTo : $.moveTo).call($, x + QX(T), y + QY(T))
@@ -199,19 +201,19 @@ function RotorE({
 			$$$()
 		}
 		// 画转子
-		function $RR(T, qt, style) {
+		function $RR(T, st, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of RT(T, qt ? Qt : undefined))
+			for (let [X, Y] of RT(T, st ? S0t : undefined))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
-		// 画转子接触角
-		function $PBC(T, n = 0, O = P * 1.1 + RB, style) {
+		// 画接触角
+		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {
 			$$({ color: '#66c', ...style })
 			$.moveTo(x + PX(T, n, P + RB), y + PY(T, n, P + RB))
 			$.lineTo(x + PX(T, n, O), y + PY(T, n, O))
-			let CT = PBC(T, n)[1]
+			let CT = RBC(T, n)[1]
 			$.moveTo(x + PX(T, n) + cos(CT), y + PY(T, n) + sin(CT))
 			$.lineTo(x + PX(T, n) + (O - P) * cos(CT), y + PY(T, n) + (O - P) * sin(CT))
 			$$$()
@@ -226,7 +228,8 @@ function RotorE({
 		}
 		return Object.assign(
 			{ param: $param, x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
-			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ, BB: $BB, PBC: $PBC, RR: $RR, SS: $SS }
+			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ },
+			{ BB: $BB, RBC: $RBC, RR: $RR, SS: $SS }
 		)
 	}
 
