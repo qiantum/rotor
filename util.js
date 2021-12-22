@@ -26,6 +26,9 @@ Array.prototype.at ??= function (i) {
 Array.prototype.At = function () {
 	return i => this[(i |= 0) >= 0 ? i : this.length + i]
 }
+Array.prototype.close = function (to = this.length, from = 0) {
+	return (this[to] = this[from]), this
+}
 
 // [from,to]序列
 Array.seq = function* (from, to, wrap, oneAll) {
