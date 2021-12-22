@@ -54,7 +54,7 @@
 				let ssub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
 				for (let ss = 0; ss < rot.NS; ss++) {
 					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
-						Text(Draw(rot, s, Canv()), round((s % 1) * ssub))
+						Text(Draw(rot, s, Canv()), ssub)
 					if (ssub >= rot.NS || ss & 1) Break()
 				}
 			} else {
@@ -114,10 +114,13 @@
 			}
 			function Text(canv, ...texts) {
 				let $ = canv.text
-				let s = canv.S.map(s => sname[floor(s).mod(sname.length)])
-				let i = floor(canv.S[0] / sname.length)
-				i && (s[0] = i + 1 + s[0]), (s[0] += texts[0] ?? '')
-				$[0].textContent = s.join(' ')
+				let s = canv.S.map(s => {
+					let i = floor(s / sname.length)
+					i = i ? i + 1 : ''
+					let sub = texts[0] ? round((s % 1) * texts[0]) : ''
+					return `${i}${sname[floor(s).mod(sname.length)]}${sub}`
+				})
+				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
 				let tn = t * canv.rot.N
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
@@ -244,11 +247,13 @@
 		}
 		figure div {
 			position: absolute;
+			z-index: 10;
 			top: 0;
 			left: 0;
 			width: 100%;
 			height: 100%;
-			z-index: 10;
+			box-sizing: border-box;
+			padding: 0 0.1rem;
 			display: grid;
 			grid-template: auto / auto auto;
 			place-content: space-between space-between;
