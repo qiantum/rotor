@@ -23,13 +23,12 @@ diffabs = v => abs(diff(v)) // [0,PI] ((v = abs(v) % PI2) > PI ? PI2 - v : v)
 Array.prototype.at ??= function (i) {
 	return this[(i |= 0) >= 0 ? i : this.length + i]
 }
-Array.prototype.At = function () {
-	return i => this[(i |= 0) >= 0 ? i : this.length + i]
-}
-Array.prototype.close = function (to = this.length, from = 0) {
-	return (this[to] = this[from]), this
-}
-
+Object.defineProperty(Array.prototype, 'At', {
+	enumerable: false,
+	get() {
+		return i => this[(i |= 0) >= 0 ? i : this.length + i]
+	},
+})
 // [from,to]序列
 Array.seq = function* (from, to, wrap, oneAll) {
 	if (wrap == null) for (; from <= to; from++) yield from
@@ -37,6 +36,34 @@ Array.seq = function* (from, to, wrap, oneAll) {
 		for (from = from.mod(wrap), to = to.mod(wrap); yield from, oneAll || from != to; )
 			(from = (from + 1).mod(wrap)), (oneAll = false)
 }
+for (let [k, f] of Object.entries({
+	*imap(f) {
+		let k = 0
+		for (let v of this) yield f(v, k++)
+	},
+	map(f) {
+		return [...this.imap(f)]
+	},
+	*iconcat(s) {
+		for (let v of this) yield v
+		for (let v of s) yield v
+	},
+	concat(s) {
+		return [...this.iconcat(s)]
+	},
+	*iclose() {
+		let a = this.next().value
+		yield a
+		for (let v of this) yield v
+		yield a
+	},
+	close(to = this.length, from = 0) {
+		return this.values ? ((this[to] = this[from]), this) : [...this.iclose()]
+	},
+}))
+	(Object.getPrototypeOf(Array.seq).prototype[k] = Object.getPrototypeOf([].keys())[k] = f),
+		(Array.prototype[k] ??= f)
+
 Number.prototype.bfind = function (s, prop, epsi) {
 	let l = 0,
 		h = s.length - 1
