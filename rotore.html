@@ -35,25 +35,25 @@
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
 				for (let t of ticks.slice(0, ceil(ticks.length / 2))) t[1] = Canv()
-				for (let t of ticks.slice(0, ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
+				for (let t of ticks.slice(0, ceil(ticks.length / 2))) Text(DrawR(t[0], Canv()))
 				Break()
 				for (let t of ticks.slice(ceil(ticks.length / 2))) t[1] = Canv()
-				for (let t of ticks.slice(ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
+				for (let t of ticks.slice(ceil(ticks.length / 2))) Text(DrawR(t[0], Canv()))
 				Break(), Tick()
 			} else if (conf.N >= 2) {
 				let rot = Rot()
 				let ssub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
 				for (let ss = 0; ss < rot.NS; ss++) {
 					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
-						Text(Draw(rot, s, Canv(), true), round((s % 1) * ssub))
+						Text(Draw(rot, s, Canv()), round((s % 1) * ssub))
 					if (ssub >= rot.NS || ss & 1) Break()
 				}
 			} else {
 				for (let N of [2, 3, 4, 5]) {
 					let rot = Rot({ N })
 					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
-					Text(DrawSS(rot, Canv()))
-					Text(DrawSS(Rot({ N, P: 0 }), Canv()))
+					Text(DrawR(rot, Canv()))
+					Text(DrawR(Rot({ N, P: 0 }), Canv()))
 					Break()
 				}
 			}
@@ -66,21 +66,23 @@
 				return rot
 			}
 
-			function Draw(rot, s, canv, p) {
+			function Draw(rot, s, canv) {
 				let $ = rot.$(canv)
-				let s0 = s | 0
-				//for (let ss = s0; (ss = (ss + sname.length) % rot.NS) != s0; )
-				//	$.SSS(ss, Scolor(s0, false, slight))
-				if (abs(s - round(s)) <= 1 / 15) $.SSS(Spair(s), Sstyle(Spair(s)))
-				$.SSS(s0, Sstyle(s0))
 				let T = rot.TS(s)
+				if (!ticky)
+					for (let n = 0; n < rot.N; n++) $.SS(T, n, Sstyle(s + rot.TN(n) / rot.TS(1)))
+				else {
+					let s0 = s | 0
+					if (abs(s - round(s)) <= 1 / 15) $.SSS(Spair(s), Sstyle(Spair(s)))
+					$.SSS(s0, Sstyle(s0))
+				}
 				$.GG(), $.Gg(T), $.g(), $.G(T)
-				p ? ($.RBC(T), $.PN(T), $.QN(T)) : $.Q(T, 0, 0)
+				ticky ? ($.RBC(T), $.PN(T), $.QN(T)) : $.Q(T, 0, 0)
 				$.RR(T), $.BB()
 				$.param(T)
 				return (canv.rot = rot), (canv.T = T), (canv.S = s), canv
 			}
-			function DrawSS(rot, canv) {
+			function DrawR(rot, canv) {
 				let $ = rot.$(canv)
 				$.GG(), $.g(), $.BB()
 				for (let s of sname.keys()) $.RR(rot.TS(rot.N == 2 ? s / 2 : s))
@@ -92,7 +94,7 @@
 				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
 				for (let t of ticks) {
 					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
-					Text(Draw(t[0], s, t[1], true))
+					Text(Draw(t[0], s, t[1]))
 				}
 			}
 			;(tick.disabled = !ticky), (tick.oninput = Tick)
@@ -128,7 +130,7 @@
 				return sp + (sdual ? sp ^ 1 : sp - 1) - (s | 0)
 			}
 			function Sstyle(s, color = scolor) {
-				return { color: color[floor(s).mod(sname.length)] }
+				return { color: color[floor(s + EPSI).mod(sname.length)] }
 			}
 
 			function Url(url, k, ok, v, replace) {
@@ -190,8 +192,8 @@
 			<summary>
 				请使用最新版浏览器，需要canvas画图。参数说明：
 				<pre>
-<!--			--->循环数 冲程名 冲程细分             转子旋转角(绿腰线)
-<!--			--->                                曲轴旋转角(小节圆)
+<!--			--->循环数 冲程名 冲程细分               转子旋转角(红线)
+<!--			--->                                曲轴旋转角(偏心线)
 
 <!--			--->N 转子顶角数
 <!--			--->E 偏心距
@@ -202,6 +204,7 @@
 <!--			--->总容积(排量、缸体-转子):与工作容积比 缸体体积
 <!--			--->RB 转子缸体间隙 C 最大接触角(转子缸体法向夹角) | 当前
 <!--		---></pre>
+				（长度：毫米，容积即面积：平方厘米）<br />
 				版权所有 <a href="http://qiantum.com">蔡倩彦</a> | 开源许可 GPLv3
 			</summary>
 		</main>

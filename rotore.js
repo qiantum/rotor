@@ -73,7 +73,8 @@ function RotorE({
 	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(RBT(Tick, Tick), true)
 	let RR = minDot(BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 
-	let SS = (T, n = 0) => [...RR(T, S0t)].reverse().concat(St(T, n).map(BB.At())) // 工作区
+	// 工作区型线
+	let SS = (T, n = 0) => [...RR(T + TN(n), S0t)].reverse().concat(St(T, n).map(BB.At())).close()
 	let V0 = area(SS(0)) // 最小容积
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
@@ -83,7 +84,7 @@ function RotorE({
 	let VV = VB - area(RR(0)) // 总容积
 	let KK = VV / V // 总容积比工作容积
 
-	// 冲程区
+	// 冲程区型线
 	let SSS = [...Array.seq(0, NBS - 1)].map(S => {
 		function* RT(T) {
 			for (let [X, Y] of RR(T, S0t)) yield [atan(X, Y), dist(X, Y), X, Y]
@@ -93,8 +94,7 @@ function RotorE({
 		}
 		let st = [...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
 		let s = [...minDot(TT(), null, TB, st)(0, st, 0, 0)]
-		s = s.reverse().concat(st.map(BB.At()))
-		return s.push(s[0]), s
+		return s.reverse().concat(st.map(BB.At())).close()
 	})
 
 	// 转子顶与缸体接触角、及接触步进角
@@ -106,7 +106,7 @@ function RotorE({
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
 	Object.assign(this, { size, N, NS, E, g, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
-	Object.assign(this, { TS, BB, RR, VT: VS })
+	Object.assign(this, { TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
 	function params(T) {
@@ -202,14 +202,12 @@ function RotorE({
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
-		// 画接触角
-		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {
-			$$({ color: '#999', ...style })
-			let CT = RBC(T, n)[1]
-			$.moveTo(x + PX(T, n, O), y + PY(T, n, O))
-			$.lineTo(x + PX(T, n), y + PY(T, n))
-			$.lineTo(x + PX(T, n) + (O - P) * cos(CT), y + PY(T, n) + (O - P) * sin(CT))
-			$$$()
+		// 画工作区
+		function $SS(T, n = 0, style) {
+			$$(style, true)
+			let to
+			for (let [X, Y] of SS(T, n)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			$$$(true)
 		}
 		// 画冲程区
 		function $SSS(S, style) {
@@ -219,10 +217,19 @@ function RotorE({
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
+		// 画接触角
+		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {
+			$$({ color: '#999', ...style })
+			let CT = RBC(T, n)[1]
+			$.moveTo(x + PX(T, n, O), y + PY(T, n, O))
+			$.lineTo(x + PX(T, n), y + PY(T, n))
+			$.lineTo(x + PX(T, n) + (O - P) * cos(CT), y + PY(T, n) + (O - P) * sin(CT))
+			$$$()
+		}
 		return Object.assign(
 			{ param: $param, x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
 			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ },
-			{ BB: $BB, RBC: $RBC, RR: $RR, SSS: $SSS }
+			{ BB: $BB, RR: $RR, SS: $SS, SSS: $SSS, RBC: $RBC }
 		)
 	}
 
@@ -239,15 +246,13 @@ function RotorE({
 		// M.fillHole(size * 2) 如果tickn太小，部分步进无数据，则需要线性填充
 		M[tt[0]] == size * 2 && (M[tt[0]] = M[(tt[0] + 1) % tickn])
 		M[(tt.at(-1) + 1) % tickn] == size * 2 && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
-		M[tickn] = M[0]
+		M.close(tickn, 0)
 		for (let t of tt)
 			if (t < tickn) M[t] = min(M[t], M[t + 1]) * 0.3125 + max(M[t], M[t + 1]) * 0.6875
 		if (fix) for (let t of tt) M[t] = fix(t, TT[t]) ?? M[t]
-		M[tickn] = M[0]
-
-		function* XY(T, ttt = tt, x = GX(T), y = GY(T)) {
+		M.close(tickn, 0)
+		return function* (T, ttt = tt, x = GX(T), y = GY(T)) {
 			for (let t of ttt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
 		}
-		return (XY.count = tt.length - 1), XY
 	}
 }
