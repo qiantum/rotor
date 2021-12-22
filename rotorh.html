@@ -8,6 +8,7 @@
 	<script>
 		if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
 		function Onload() {
+			let time = new Date()
 			let url = new URL(location)
 			let mode = url.searchParams
 			let body = document.body
@@ -25,7 +26,7 @@
 			//let slight = ['#f0fff0', '#f6f9ff', '#fff6f6', '#f6f5f7']
 			let sdual = mode.get('.2') != null
 			let size = mode.get('size') ?? 320
-			let conf = { NB: mode.get('n') | 0, size }
+			let conf = { N: mode.get('n') | 0, size }
 			let ticks = []
 
 			function Tick() {
@@ -35,9 +36,9 @@
 			}
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
-				for (let NB of conf.NB >= 2 ? [conf.NB] : [2, 3, 4, 5, 6, 7]) {
-					for (let P of conf.NB >= 2 ? [undefined, 0, 1, 2] : [undefined])
-						ticks.push([Rot({ NB, P })])
+				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
+					for (let P of conf.N >= 2 ? [undefined, 0, 1, 2] : [undefined])
+						ticks.push([Rot({ N, P })])
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
 				let row = ceil(sqrt(ticks.length))
@@ -49,19 +50,19 @@
 					for (let t = 0; (ticks[t - col]?.length == 2 ? (t -= col) : t) < row * col; )
 						ticks[t]?.push(Canv()), ++t % col || Break()
 				Tick()
-			} else if (conf.NB >= 2) {
+			} else if (conf.N >= 2) {
 				let rot = Rot()
-				let ssub = rot.NB <= 3 ? 6 : rot.NB == 5 ? 5 : 4
+				let ssub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
 				for (let ss = 0; ss < rot.NS; ss++) {
 					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
 						Text(Draw(rot, s, Canv()), ssub)
 					if (ssub >= rot.NS || ss & 1) Break()
 				}
 			} else {
-				for (let NB of [2, 3, 4, 5]) {
-					let rot = Rot({ NB })
+				for (let N of [2, 3, 4, 5]) {
+					let rot = Rot({ N })
 					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
-					Text(DrawR(rot, Canv())), Text(DrawR(Rot({ NB, P: 0 }), Canv()))
+					Text(DrawR(rot, Canv())), Text(DrawR(Rot({ N, P: 0 }), Canv()))
 					Break()
 				}
 			}
@@ -80,14 +81,14 @@
 				let T = rot.TS(s)
 				canv.S = [s]
 				if (!sss)
-					for (let n = 0; n < rot.NB; n++)
-						$.SS(T, -n, Sstyle((canv.S[n] = s + rot.TBN(n) / rot.TS(1))))
+					for (let n = 0; n < rot.N; n++)
+						$.SS(T, -n, Sstyle((canv.S[n] = s + rot.TN(n) / rot.TS(1))))
 				else {
 					let s0 = s | 0
 					if (abs(s - round(s)) <= 1 / 15) $.SSS(Spair(s), Sstyle(Spair(s)))
 					$.SSS(s0, Sstyle(s0))
 				}
-				ticky && $.BQQ(), $.GG(T), $.Gg(T), $.g(T), $.G()
+				ticky && $.QQ(), $.GG(T), $.E(T), $.GB(), $.G(T)
 				ticky && $.RBC(T), $.P(T, 0, 0)
 				$.RR(T), $.BB()
 				ticky && $.BQN()
@@ -97,7 +98,7 @@
 			function DrawR(rot, canv) {
 				let $ = rot.$(canv)
 				$.G(), $.BB()
-				for (let s = 0; s < sname.length >> 1; s += rot.NB == 2 ? 0.5 : 1) $.RR(rot.TS(s))
+				for (let s = 0; s < sname.length >> 1; s += rot.N == 2 ? 0.5 : 1) $.RR(rot.TS(s))
 				$.param()
 				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
 			}
@@ -123,7 +124,7 @@
 				})
 				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
-				let tn = t * canv.rot.N
+				let tn = t * canv.rot.N1
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
@@ -164,6 +165,7 @@
 				Url(u, 'eqvv', eqvv), Url(u, 'tick', ticky), Url(u, 'vert', vert)
 				a.href = u
 			}
+			console.log('msec', new Date() - time)
 		}
 	</script>
 	<body onload="Onload()">
@@ -200,7 +202,7 @@
 <!--			--->循环数 冲程名 冲程细分               转子旋转角(红线)
 <!--			--->...逆时针排列                     曲轴旋转角(偏心线)
 
-<!--			--->NB 缸体顶角数
+<!--			--->N 缸体顶角数
 <!--			--->E 偏心距
 <!--			--->P 转子顶半径
 <!--			--->K 压缩比、膨胀比

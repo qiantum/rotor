@@ -11,16 +11,16 @@ function RotorE({
 	size, // 预估像素
 }) {
 	if (N != (N |= 0) || N < 2) throw 'err N'
-	let NB = N - 1 // 缸体顶数
-	let NS = NB + NB // 缸体冲程数
+	let N1 = N - 1 // 缸体顶数
+	let NS = N1 + N1 // 缸体冲程数
 	let NS4 = lcm(NS, 4) // 完整循环冲程数
 	let N2 = N + N
-	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
+	tickn = ceil(tickn / N2 / N1) * N2 * N1 // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
 	E = round((E ?? (size * 0.313) / (P + N + 1.75)) * 4) / 4 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
-	let GB = E * NB // 缸体小节圆半径
+	let GB = E * N1 // 缸体小节圆半径
 	let G = E * N // 转子大节圆半径
 	P = round(E * (P + N + 2)) // 转子顶半径
 	let Q = P - E - E // 转子腰半径
@@ -33,8 +33,8 @@ function RotorE({
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tN = n => (n * tickn) / N // 转子腰起始步进
 	let TN = n => (n * PI2) / N // 转子腰起始角
-	let tS = S => ((S % NS) * tickn) / NS // 转子冲程起始步进
-	let TS = S => (S * PI2) / NS // 转子冲程起始角
+	let tS = S => ((S % NS) * tickn) / NS // 冲程转子起始步进
+	let TS = S => (S * PI2) / NS // 冲程转子起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -64,8 +64,8 @@ function RotorE({
 	function* BRT(B) {
 		if (typeof B == 'number')
 			for (let T of Tick_) {
-				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(-T * NB)
-				let Y = P * sin(B + T) - E * sin(B * N + T) - E * sin(-T * NB)
+				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(-T * N1)
+				let Y = P * sin(B + T) - E * sin(B * N + T) - E * sin(-T * N1)
 				yield [atan(X, Y), dist(X, Y), X, Y] // 角[0,PI2) B==0 沿T严格递增 B>0 沿T循环严格递增
 			}
 		else for (B of B) yield BRT(B)
@@ -101,7 +101,7 @@ function RotorE({
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NS: NS4, E, GB, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { size, N, N1, NS: NS4, E, GB, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
 	Object.assign(this, { TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
@@ -180,7 +180,8 @@ function RotorE({
 		// 画转子腰旋转线
 		function $QQ(style) {
 			$$({ color: '#fbb', ...style })
-			for (let T of Tick_) (T ? $.lineTo : $.moveTo).call($, x + QX(T), y + QY(T))
+			let to
+			for (let T of Tick_) (to = to ? $.lineTo : $.moveTo).call($, x + QX(T), y + QY(T))
 			$$$()
 		}
 		// 画缸体
@@ -194,8 +195,7 @@ function RotorE({
 		function $RR(T, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of RR(T))
-				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of RR(T)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画工作区
