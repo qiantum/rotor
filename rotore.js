@@ -159,7 +159,6 @@ function RotorE({
 		// 画转子顶
 		function $P(T, n = 0, O, style) {
 			$$({ color: '#00f', ...style })
-			RB && $.arc(x + PX(T, n), y + PY(T, n), RB, 0, PI2)
 			$.moveTo(x + PX(T, n), y + PY(T, n)), $.lineTo(x + PX(T, n, O), y + PY(T, n, O))
 			$$$()
 		}
@@ -176,6 +175,12 @@ function RotorE({
 		// 画转子全部腰
 		function $QN(T, O = [0, G], style) {
 			for (let n = 0; n < N; n++) $Q(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
+		}
+		// 画间隙密封
+		function $RB(T, style) {
+			if (!RB) return
+			for (let Style = { color: '#00f', ...style }, n = 0; n < N; n++)
+				$$(Style), $.arc(x + PX(T, n), y + PY(T, n), RB, 0, PI2), $$$()
 		}
 		// 画转子腰旋转线
 		function $QQ(style) {
@@ -224,7 +229,7 @@ function RotorE({
 		}
 		return Object.assign(
 			{ param: $param, x, y, E: $E, GB: $GB, G: $G, GG: $GG },
-			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ },
+			{ P: $P, Q: $Q, PN: $PN, QN: $QN, RB: $RB, QQ: $QQ },
 			{ BB: $BB, RR: $RR, SS: $SS, SSS: $SSS, RBC: $RBC }
 		)
 	}
