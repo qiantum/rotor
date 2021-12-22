@@ -54,8 +54,8 @@ function RotorH({
 
 	let Pt = [...Array.seq(-tPQ, tPQ, tickn, true)] // 转子顶线步进
 	// 转子型线
-	function* RT(T, Rt, RR = Tick_) {
-		for (let R of Rt?.map(Tick_.At()) ?? RR) yield [RX(T, R), RY(T, R)]
+	function* RR(T, Rt, RT = Tick_) {
+		for (let R of Rt?.map(Tick_.At()) ?? RT) yield [RX(T, R), RY(T, R)]
 	}
 	let TR = Tick_.map(R => atan(RX(0, R, undefined, 0), RY(0, R, undefined, 0)))
 	TR[TR.length - 1] = PI2 // 转子步进角，非均匀
@@ -83,20 +83,23 @@ function RotorH({
 		let R = (atan(BQX(n) - gX(T), BQY(n) - gY(T)) - T).mod(PI2)
 		return [...Array.seq(round(R1.bfind(TR)) % tickn, round(R.bfind(TR)) % tickn, tickn)] // 近似转子步进
 	}
-
-	let V0 = area(S0t.map(BB.At()).concat([...RT(0, S0t)].reverse())) // 最小容积 == VQ(0, 0, true)
-	// 旋转容积
-	function VT(T, n = 0, withMin) {
-		let st = St(T, n)
-		let v = area(S0t.map(BB.At()).concat([...RT(T, st)].reverse()))
-		return round(withMin ? v : v - V0)
-	}
-	let V = VT(TS(1)) // 工作容积
+	
+	let SS = (T, n = 0) => [...RR(T, St(T, n))].reverse().concat(S0t.map(BB.At())) // 工作区
+	let V0 = area(SS(0)) // 最小容积
+	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
+	let V = VS(TS(1)) // 工作容积
 	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
 	let VB = area(BB) // 总体积
 	let KB = VB / V // 总体积比工作容积
-	let VV = VB - area(RT(0)) // 总容积
+	let VV = VB - area(RR(0)) // 总容积
 	let KK = VV / V // 总容积比工作容积
+
+	// 转子冲程线步进
+	let BSt = [...Array.seq(0, NRS - 1)].map(S => [
+		...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true),
+	])
+	// 冲程区
+	let SSS = BSt.map((BSt, S) => [...RR(0)])
 
 	// 缸体腰与转子接触角、及接触步进角
 	function RBC(T, n = 0) {
@@ -105,16 +108,9 @@ function RotorH({
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
-	// 转子冲程线步进
-	let BSt = [...Array.seq(0, NRS - 1)].map(S => [
-		...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true),
-	])
-	// 冲程区
-	let SS = BSt.map((BSt, S) => [...RT(0)])
-
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
 	Object.assign(this, { size, NB, N, NS, E, G, g, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
-	Object.assign(this, { TS, BB, RT, VT })
+	Object.assign(this, { TS, BB, RR, VS })
 
 	// 参数显示
 	function params(T) {
@@ -122,7 +118,7 @@ function RotorH({
 		if (T != null) {
 			let a = (T / TS(1)) * PI
 			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
-			p1 = _`|${VT(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VT(T) / V}{.2}__`
+			p1 = _`|${VS(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VS(T) / V}{.2}__`
 		}
 		let p2 = T != null ? _`|${(RBC(T)[0] / PI2) * 360}{02}` : ''
 		return (
@@ -203,13 +199,13 @@ function RotorH({
 		function $RR(T, st, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of RT(T, st ? St(T) : undefined))
+			for (let [X, Y] of RR(T, st ? St(T) : undefined))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画接触角
 		function $RBC(T, n = 0, O = BQ * 0.9 - RB, style) {
-			$$({ color: '#66c', ...style })
+			$$({ color: '#999', ...style })
 			let CT = RBC(T, n)[1]
 			$.moveTo(x + BQX(n, O), y + BQY(n, O))
 			$.lineTo(x + BQX(n), y + BQY(n))
@@ -217,17 +213,17 @@ function RotorH({
 			$$$()
 		}
 		// 画冲程区
-		function $SS(S, style) {
+		function $SSS(S, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SS[floor(S).mod(NRS)])
+			for (let [X, Y] of SSS[floor(S).mod(NRS)])
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
 		return Object.assign(
 			{ param: $param, x, y, G: $G, Gg: $Gg, g: $g, GG: $GG },
 			{ P: $P, PN: $PN, BQN: $BQN, BQQ: $BQQ },
-			{ BB: $BB, RBC: $RBC, RR: $RR, SS: $SS }
+			{ BB: $BB, RBC: $RBC, RR: $RR, SSS: $SSS }
 		)
 	}
 

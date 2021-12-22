@@ -53,7 +53,7 @@ function RotorE({
 
 	let S0t = [...Array.seq(-tPQ, tPQ, tickn)] // 冲程0工作线步进，即转子缸体腰线，此处tickn整倍数
 	let S1t = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)] // 冲程1工作线步进，即缸体顶线，此处tickn整倍数
-	// 缸体工作线，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数
+	// 缸体工作线步进，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数
 	function St(T, n = 0) {
 		let B1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
 		let B = atan(PX(T, n, P + RB), PY(T, n, P + RB))
@@ -70,22 +70,32 @@ function RotorE({
 			}
 		else for (B of B) yield BRT(B)
 	}
-	// 转子型线、即缸体绕转子心的内包络线 // RT = MinCurve(RBT(Tick, Tick), true)
-	let RT = minDot(BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(RBT(Tick, Tick), true)
+	let RR = minDot(BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 
-	let V0 = area(S0t.map(BB.At()).concat([...RT(0, S0t)].reverse())) // 最小容积 == VQ(0, 0, true)
-	// 旋转容积
-	function VT(T, n = 0, withMin) {
-		let st = St(T, n)
-		let v = area(st.map(BB.At()).concat([...RT(T, S0t)].reverse()))
-		return round(withMin ? v : v - V0)
-	}
-	let V = VT(TS(1)) // 工作容积
+	let SS = (T, n = 0) => [...RR(T, S0t)].reverse().concat(St(T, n).map(BB.At())) // 工作区
+	let V0 = area(SS(0)) // 最小容积
+	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
+	let V = VS(TS(1)) // 工作容积
 	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
 	let VB = area(BB) // 总体积
 	let KB = VB / V // 总体积比工作容积
-	let VV = VB - area(RT(0)) // 总容积
+	let VV = VB - area(RR(0)) // 总容积
 	let KK = VV / V // 总容积比工作容积
+
+	// 冲程区
+	let SSS = [...Array.seq(0, NBS - 1)].map(S => {
+		function* RT(T) {
+			for (let [X, Y] of RR(T, S0t)) yield [atan(X, Y), dist(X, Y), X, Y]
+		}
+		function* TT() {
+			for (let t of Array.seq(tS(S), tS(S + 1), tickn, true)) yield RT(Tick_[t])
+		}
+		let st = [...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
+		let s = [...minDot(TT(), null, TB, st)(0, st, 0, 0)]
+		s = s.reverse().concat(st.map(BB.At()))
+		return s.push(s[0]), s
+	})
 
 	// 转子顶与缸体接触角、及接触步进角
 	function RBC(T, n = 0) {
@@ -94,23 +104,9 @@ function RotorE({
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
-	// 冲程区
-	let SS = [...Array.seq(0, NBS - 1)].map(S => {
-		function* RR(T) {
-			for (let [X, Y] of RT(T, S0t)) yield [atan(X, Y), dist(X, Y), X, Y]
-		}
-		function* TT() {
-			for (let t of Array.seq(tS(S), tS(S + 1), tickn, true)) yield RR(Tick_[t])
-		}
-		let st = [...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
-		let s = [...minDot(TT(), null, TB, st)(0, st, 0, 0)]
-		s = st.map(BB.At()).concat(s.reverse())
-		return s.push(s[0]), s
-	})
-
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
 	Object.assign(this, { size, N, NS, E, g, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
-	Object.assign(this, { TS, BB, RT, VT })
+	Object.assign(this, { TS, BB, RR, VT: VS })
 
 	// 参数显示
 	function params(T) {
@@ -118,7 +114,7 @@ function RotorE({
 		if (T != null) {
 			let a = (T / TS(1)) * PI
 			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
-			p1 = _`|${VT(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VT(T) / V}{.2}__`
+			p1 = _`|${VS(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VS(T) / V}{.2}__`
 		}
 		let p2 = T != null ? _`|${(RBC(T)[0] / PI2) * 360}{02}` : ''
 		return (
@@ -202,13 +198,13 @@ function RotorE({
 		function $RR(T, st, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of RT(T, st ? S0t : undefined))
+			for (let [X, Y] of RR(T, st ? S0t : undefined))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画接触角
 		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {
-			$$({ color: '#66c', ...style })
+			$$({ color: '#999', ...style })
 			let CT = RBC(T, n)[1]
 			$.moveTo(x + PX(T, n, O), y + PY(T, n, O))
 			$.lineTo(x + PX(T, n), y + PY(T, n))
@@ -216,17 +212,17 @@ function RotorE({
 			$$$()
 		}
 		// 画冲程区
-		function $SS(S, style) {
+		function $SSS(S, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SS[floor(S).mod(NBS)])
+			for (let [X, Y] of SSS[floor(S).mod(NBS)])
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
 		return Object.assign(
 			{ param: $param, x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
 			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ },
-			{ BB: $BB, RBC: $RBC, RR: $RR, SS: $SS }
+			{ BB: $BB, RBC: $RBC, RR: $RR, SSS: $SSS }
 		)
 	}
 
