@@ -12,15 +12,15 @@ function RotorE({
 }) {
 	if (N != (N |= 0) || N < 2) throw 'err N'
 	let NB = N - 1 // 缸体顶数
-	let NBS = NB + NB // 缸体冲程数
-	let NS = lcm(NBS, 4) // 完整循环冲程数
+	let NS = NB + NB // 缸体冲程数
+	let NS4 = lcm(NS, 4) // 完整循环冲程数
 	let N2 = N + N
 	tickn = ceil(tickn / N2 / NB) * N2 * NB // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
 	E = round((E ?? (size * 0.313) / (P + N + 1.75)) * 4) / 4 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
-	let g = E * NB // 缸体小节圆半径
+	let GB = E * NB // 缸体小节圆半径
 	let G = E * N // 转子大节圆半径
 	P = round(E * (P + N + 2)) // 转子顶半径
 	let Q = P - E - E // 转子腰半径
@@ -33,8 +33,8 @@ function RotorE({
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tN = n => (n * tickn) / N // 转子腰起始步进
 	let TN = n => (n * PI2) / N // 转子腰起始角
-	let tS = S => ((S % NBS) * tickn) / NBS // 转子冲程起始步进
-	let TS = S => (S * PI2) / NBS // 转子冲程起始角
+	let tS = S => ((S % NS) * tickn) / NS // 转子冲程起始步进
+	let TS = S => (S * PI2) / NS // 转子冲程起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -85,7 +85,7 @@ function RotorE({
 	let KK = VV / V // 总容积比工作容积
 
 	// 冲程区型线
-	let SSS = Array.seq(0, NBS - 1).map(S => {
+	let SSS = Array.seq(0, NS - 1).map(S => {
 		let dots = Array.seq(tS(S), tS(S + 1), tickn, true).imap(t =>
 			RR(Tick_[t], S0t).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
 		)
@@ -95,13 +95,13 @@ function RotorE({
 
 	// 转子顶与缸体接触角、及接触步进角
 	function RBC(T, n = 0) {
-		let CT = atan(PX(T, n) - -g * cos(T * N), PY(T, n) - -g * sin(T * N)) // 两节圆交点--转子顶点
+		let CT = atan(PX(T, n) - -GB * cos(T * N), PY(T, n) - -GB * sin(T * N)) // 两节圆交点--转子顶点
 		return [diffabs(T + TN(n) + TPQ - CT), CT]
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NS, E, g, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { size, N, NS: NS4, E, GB, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
 	Object.assign(this, { TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
@@ -139,14 +139,14 @@ function RotorE({
 			fill ? $.fill() : $.stroke(), ($.lineWidth = 1)
 			fill ? ($.fillStyle = '#000') : ($.strokeStyle = '#000')
 		}
-		// 画缸体小圆
-		function $g(style) {
-			$$(style), $.arc(x, y, g, 0, PI2), $$$()
-		}
 		// 画偏心线，即曲轴
-		function $Gg(T, style) {
+		function $E(T, style) {
 			$$({ color: '#ccc', thick: 4, ...style })
 			$.moveTo(x, y), $.lineTo(x + GX(T), y + GY(T)), $$$()
+		}
+		// 画缸体小圆
+		function $GB(style) {
+			$$(style), $.arc(x, y, GB, 0, PI2), $$$()
 		}
 		// 画转子大圆
 		function $G(T, style) {
@@ -191,10 +191,10 @@ function RotorE({
 			$$$()
 		}
 		// 画转子
-		function $RR(T, st, style) {
+		function $RR(T, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of RR(T, st ? S0t : undefined))
+			for (let [X, Y] of RR(T))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
@@ -209,7 +209,7 @@ function RotorE({
 		function $SSS(S, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SSS[floor(S).mod(NBS)])
+			for (let [X, Y] of SSS[floor(S).mod(NS)])
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
@@ -223,7 +223,7 @@ function RotorE({
 			$$$()
 		}
 		return Object.assign(
-			{ param: $param, x, y, g: $g, Gg: $Gg, G: $G, GG: $GG },
+			{ param: $param, x, y, E: $E, GB: $GB, G: $G, GG: $GG },
 			{ P: $P, Q: $Q, PN: $PN, QN: $QN, QQ: $QQ },
 			{ BB: $BB, RR: $RR, SS: $SS, SSS: $SSS, RBC: $RBC }
 		)
