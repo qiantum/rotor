@@ -17,7 +17,7 @@
 			let tick = body.querySelector('#tick')
 
 			//let { min, max, floor, round, ceil, PI } = Math, PI2 = PI+PI
-			let sname = ['I', 'C', '1', 'E']
+			let sname = ['I', 'C', 'P', 'E']
 			//let scolor = ['#c9c9ff56', '#e3f3e3', '#ffc0c05c', '#e7e6ec']
 			//let scolor = ['#b6f6b650', '#e6f3ff', '#ffd0d95c', '#eeecf0']
 			//let scolor = ['#a6f0a356', '#dcecff', '#ffc0c05c', '#e7e6ec']
@@ -28,32 +28,40 @@
 			let conf = { NB: mode.get('n') | 0, size }
 			let ticks = []
 
+			function Tick() {
+				let s = tick.value | 0
+				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
+				for (let t of ticks) Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2]))
+			}
 			if (ticky) {
+				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
 				for (let NB of conf.NB >= 2 ? [conf.NB] : [2, 3, 4, 5, 6, 7]) {
 					for (let P of conf.NB >= 2 ? [undefined, 0, 1, 2] : [undefined])
 						ticks.push([Rot({ NB, P })])
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
-				for (let t of ticks.slice(0, ceil(ticks.length / 2))) t[1] = Canv()
-				for (let t of ticks.slice(0, ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
-				Break()
-				for (let t of ticks.slice(ceil(ticks.length / 2))) t[1] = Canv()
-				for (let t of ticks.slice(ceil(ticks.length / 2))) Text(DrawSS(t[0], Canv()))
-				Break(), Tick()
+				let row = ceil(sqrt(ticks.length))
+				let col = ceil((ticks.length << 1) / row)
+				if (row % 2)
+					for (let t = 0; ticks[t] || (Break(), (t = (t % row) + 1)) < row; t += row)
+						ticks[t].push(Canv(), Canv())
+				else
+					for (let t = 0; (ticks[t - col]?.length == 2 ? (t -= col) : t) < row * col; )
+						ticks[t]?.push(Canv()), ++t % col || Break()
+				Tick()
 			} else if (conf.NB >= 2) {
 				let rot = Rot()
 				let ssub = rot.NB <= 3 ? 6 : rot.NB == 5 ? 5 : 4
 				for (let ss = 0; ss < rot.NS; ss++) {
 					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
-						Text(Draw(rot, s, Canv(), true), round((s % 1) * ssub))
+						Text(Draw(rot, s, Canv()), ssub)
 					if (ssub >= rot.NS || ss & 1) Break()
 				}
 			} else {
 				for (let NB of [2, 3, 4, 5]) {
 					let rot = Rot({ NB })
 					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
-					Text(DrawSS(rot, Canv()))
-					Text(DrawSS(Rot({ NB, P: 0 }), Canv()))
+					Text(DrawR(rot, Canv())), Text(DrawR(Rot({ NB, P: 0 }), Canv()))
 					Break()
 				}
 			}
@@ -66,38 +74,33 @@
 				return rot
 			}
 
-			function Draw(rot, s, canv, p) {
+			function Draw(rot, s, canv, sss) {
+				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
 				let $ = rot.$(canv)
-				let s0 = s | 0
-				//for (let ss = s0; (ss = (ss + sname.length) % rot.NS) != s0; )
-				//	$.SSS(ss, Scolor(s0, false, slight))
-				if (abs(s - round(s)) <= 1 / 15) $.SSS(Spair(s), Sstyle(Spair(s)))
-				$.SSS(s0, Sstyle(s0))
 				let T = rot.TS(s)
+				canv.S = [s]
+				if (!sss)
+					for (let n = 0; n < rot.NB; n++)
+						$.SS(T, -n, Sstyle((canv.S[n] = s + rot.TBN(n) / rot.TS(1))))
+				else {
+					let s0 = s | 0
+					if (abs(s - round(s)) <= 1 / 15) $.SSS(Spair(s), Sstyle(Spair(s)))
+					$.SSS(s0, Sstyle(s0))
+				}
 				$.BQQ(), $.GG(T), $.Gg(T), $.g(T), $.G()
-				p ? ($.RBC(T), $.PN(T)) : $.P(T, 0, 0)
+				ticky && ($.RBC(T), $.PN(T)), $.P(T, 0, 0)
 				$.RR(T), $.BB()
-				p && $.BQN()
+				$.BQN()
 				$.param(T)
-				return (canv.rot = rot), (canv.T = T), (canv.S = s), canv
+				return (canv.rot = rot), (canv.T = T), canv
 			}
-			function DrawSS(rot, canv) {
+			function DrawR(rot, canv) {
 				let $ = rot.$(canv)
 				$.G(), $.BB()
 				for (let s = 0; s < sname.length >> 1; s += rot.NB == 2 ? 0.5 : 1) $.RR(rot.TS(s))
 				$.param()
-				return (canv.rot = rot), (canv.T = canv.S = null), canv
+				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
 			}
-			function Tick() {
-				let s = tick.value | 0
-				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
-				for (let t of ticks) {
-					t[1].canvas.getContext('2d').clearRect(0, 0, size, size)
-					Text(Draw(t[0], s, t[1], true))
-				}
-			}
-			;(tick.disabled = !ticky), (tick.oninput = Tick)
-			ticky && tick.focus()
 
 			function Canv() {
 				let $ = body.querySelector('template').content.cloneNode(true)
@@ -112,16 +115,19 @@
 			}
 			function Text(canv, ...texts) {
 				let $ = canv.text
-				let s = floor(canv.S).mod(sname.length)
-				let ss = floor(canv.S / sname.length) + 1
-				if (canv.S == null) $[0].textContent = `${sname.join('')}${texts[0] ?? ''}`
-				else $[0].textContent = `${ss == 1 ? '' : ss}${sname[s]}${texts[0] ?? ''}`
+				let s = canv.S.map(s => {
+					let i = floor(s / sname.length)
+					i = i ? i + 1 : ''
+					let sub = texts[0] ? round((s % 1) * texts[0]) : ''
+					return `${i}${sname[floor(s).mod(sname.length)]}${sub}`
+				})
+				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
-				let tn = t * canv.rot.NB
+				let tn = t * canv.rot.N
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
-				$[3].textContent = texts[3] ?? ''
+				$[3].textContent = texts[2] ?? ''
 				return canv
 			}
 			function Spair(s) {
@@ -129,7 +135,7 @@
 				return sp + (sdual ? sp ^ 1 : sp - 1) - (s | 0)
 			}
 			function Sstyle(s, color = scolor) {
-				return { color: color[floor(s).mod(sname.length)] }
+				return { color: color[floor(s + EPSI).mod(sname.length)] }
 			}
 
 			function Url(url, k, ok, v, replace) {
@@ -191,8 +197,8 @@
 			<summary>
 				请使用最新版浏览器，需要canvas画图。参数说明：
 				<pre>
-<!--			--->循环数 冲程名 冲程细分             转子旋转角(绿腰线)
-<!--			--->                                曲轴旋转角(小节圆)
+<!--			--->循环数 冲程名 冲程细分               转子旋转角(红线)
+<!--			--->...逆时针排列                     曲轴旋转角(偏心线)
 
 <!--			--->NB 缸体顶角数
 <!--			--->E 偏心距
@@ -203,6 +209,7 @@
 <!--			--->总容积(排量、缸体-转子):与工作容积比 缸体体积
 <!--			--->RB 转子缸体间隙 C 最大接触角(转子缸体法向夹角) | 当前
 <!--		---></pre>
+				（长度：毫米，容积即面积：平方厘米）<br />
 				版权所有 <a href="http://qiantum.com">蔡倩彦</a> | 开源许可 GPLv3
 			</summary>
 		</main>
@@ -241,11 +248,13 @@
 		}
 		figure div {
 			position: absolute;
+			z-index: 10;
 			top: 0;
 			left: 0;
 			width: 100%;
 			height: 100%;
-			z-index: 10;
+			box-sizing: border-box;
+			padding: 0 0.1rem;
 			display: grid;
 			grid-template: auto / auto auto;
 			place-content: space-between space-between;
@@ -268,7 +277,7 @@
 			display: inline-block;
 			margin: 0.7rem 0;
 			font-size: 13.5px;
-			text-align: right;
+			text-align: left;
 		}
 		nav {
 			position: sticky;
