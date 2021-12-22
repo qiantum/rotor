@@ -37,7 +37,7 @@
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
-					for (let P of conf.N >= 2 ? [undefined, 0, 1, 2] : [undefined])
+					for (let P of conf.N >= 2 ? [undefined, 0,7, 1.7, 2 + N / 3] : [undefined])
 						ticks.push([Rot({ N, P })])
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
@@ -91,7 +91,7 @@
 				ticky && $.QQ(), $.GG(T), $.E(T), $.GB(), $.G(T)
 				ticky && $.RBC(T), $.P(T, 0, 0)
 				$.RR(T), $.BB()
-				ticky && $.BQN()
+				ticky && $.RB()
 				$.param(T)
 				return (canv.rot = rot), (canv.T = T), canv
 			}
@@ -204,7 +204,7 @@
 
 <!--			--->N 缸体顶角数
 <!--			--->E 偏心距
-<!--			--->P 转子顶半径
+<!--			--->P 缸体顶半径
 <!--			--->K 压缩比、膨胀比
 <!--			--->V 工作容积(单区最大-最小) | 当前(单区-最小)
 <!--			--->3倍连杆比 | 余弦比 | 当前比 (与工作容积比)
