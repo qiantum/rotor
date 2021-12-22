@@ -8,6 +8,7 @@
 	<script>
 		if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
 		function Onload() {
+			let time = new Date()
 			let url = new URL(location)
 			let mode = url.searchParams
 			let body = document.body
@@ -163,6 +164,7 @@
 				Url(u, 'eqvv', eqvv), Url(u, 'tick', ticky), Url(u, 'vert', vert)
 				a.href = u
 			}
+			console.log('msec', new Date() - time)
 		}
 	</script>
 	<body onload="Onload()">

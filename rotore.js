@@ -27,7 +27,7 @@ function RotorE({
 	RB *= P / 100 // 转子缸体间隙
 
 	// 转子、曲轴步进角，均匀
-	let Tick_ = (this.Tick_ = [...Array.seq(0, tickn)].map(t => (t / tickn) * PI2))
+	let Tick_ = (this.Tick_ = Array.seq(0, tickn).map(t => (t / tickn) * PI2))
 	let Tick = (this.Tick = Tick_.slice(0, tickn))
 	let tPQ = tickn / N2 // 转子顶腰步进
 	let TPQ = PI2 / N2 // 转子顶腰夹角
@@ -51,14 +51,14 @@ function RotorE({
 	let TB = BB.map(([X, Y]) => atan(X, Y))
 	TB[TB.length - 1] = PI2 // 缸体步进角，非均匀
 
-	let S0t = [...Array.seq(-tPQ, tPQ, tickn)] // 冲程0工作线步进，即转子缸体腰线，此处tickn整倍数
-	let S1t = [...Array.seq(tS(1) - tPQ, tS(1) + tPQ)] // 冲程1工作线步进，即缸体顶线，此处tickn整倍数
-	// 缸体工作线步进，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数
+	// 缸体工作线步进，T每TS(s)为tickn整倍数，转子工作线==St(0,n)
 	function St(T, n = 0) {
 		let B1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
 		let B = atan(PX(T, n, P + RB), PY(T, n, P + RB))
-		return [...Array.seq(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn)] // 近似缸体步进
+		return Array.seq(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn) // 近似缸体步进
 	}
+	let S0t = [...Array.seq(-tPQ, tPQ, tickn)] // 冲程0工作线步进==[...St(0,0)]
+	let S0tRev = [...S0t].reverse()
 
 	// 缸体对转子旋转
 	function* BRT(B) {
@@ -70,11 +70,11 @@ function RotorE({
 			}
 		else for (B of B) yield BRT(B)
 	}
-	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(RBT(Tick, Tick), true)
-	let RR = enve(min, BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(BRT(Tick, Tick), true)
+	let RR = enve(min, BRT(S0t.imap(Tick.At)), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 
-	// 工作区型线
-	let SS = (T, n = 0) => [...RR(T + TN(n), S0t)].reverse().concat(St(T, n).map(BB.At())).close()
+	// 工作区型线，== ...RR(T, St(0, n)).rev()...
+	let SS = (T, n = 0, _ = St(T, n).imap(BB.At)) => _.iconcat(RR(T + TN(n), S0tRev)).iclose()
 	let V0 = area(SS(0)) // 最小容积
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
@@ -85,16 +85,12 @@ function RotorE({
 	let KK = VV / V // 总容积比工作容积
 
 	// 冲程区型线
-	let SSS = [...Array.seq(0, NBS - 1)].map(S => {
-		function* RT(T) {
-			for (let [X, Y] of RR(T, S0t)) yield [atan(X, Y), dist(X, Y), X, Y]
-		}
-		function* TT() {
-			for (let t of Array.seq(tS(S), tS(S + 1), tickn, true)) yield RT(Tick_[t])
-		}
+	let SSS = Array.seq(0, NBS - 1).map(S => {
+		let dots = Array.seq(tS(S), tS(S + 1), tickn, true).imap(t =>
+			RR(Tick_[t], S0t).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
+		)
 		let st = [...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
-		let s = [...enve(min, TT(), null, TB, st)(0, st, 0, 0)]
-		return s.reverse().concat(st.map(BB.At())).close()
+		return [...enve(min, dots, null, TB, st)(0, st, 0, 0), ...st.map(BB.At).reverse()].close()
 	})
 
 	// 转子顶与缸体接触角、及接触步进角
