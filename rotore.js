@@ -71,7 +71,7 @@ function RotorE({
 		else for (B of B) yield BRT(B)
 	}
 	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(RBT(Tick, Tick), true)
-	let RR = minDot(BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+	let RR = enve(min, BRT(S0t.map(Tick.At())), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 
 	// 工作区型线
 	let SS = (T, n = 0) => [...RR(T + TN(n), S0t)].reverse().concat(St(T, n).map(BB.At())).close()
@@ -93,7 +93,7 @@ function RotorE({
 			for (let t of Array.seq(tS(S), tS(S + 1), tickn, true)) yield RT(Tick_[t])
 		}
 		let st = [...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
-		let s = [...minDot(TT(), null, TB, st)(0, st, 0, 0)]
+		let s = [...enve(min, TT(), null, TB, st)(0, st, 0, 0)]
 		return s.reverse().concat(st.map(BB.At())).close()
 	})
 
@@ -233,25 +233,26 @@ function RotorE({
 		)
 	}
 
-	// 点集求内包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
-	function minDot(dots, fix, TT = Tick_, tt = Tick_.keys()) {
+	// 点集求包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
+	function enve(most = min, dots, fix, TT = Tick_, tt = Tick_.keys()) {
 		if (TT[0] != 0 || TT[tickn] != PI2) throw 'err TT'
-		let M = new Array(tickn).fill(size * 2)
+		let init = most == min ? size * 10 : 0
+		let M = new Array(tickn).fill(init)
 		for (let dot of dots)
 			for (let [A, R] of dot) {
 				let t = ceil(TT == Tick_ ? (tickn * A) / PI2 : A.bfind(TT)) % tickn
-				M[t] = min(M[t], R)
+				M[t] = most(M[t], R)
 			}
 		tt.values ?? (tt = [...tt])
-		// M.fillHole(size * 2) 如果tickn太小，部分步进无数据，则需要线性填充
-		M[tt[0]] == size * 2 && (M[tt[0]] = M[(tt[0] + 1) % tickn])
-		M[(tt.at(-1) + 1) % tickn] == size * 2 && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
+		// M.fillHole(init) 如果tickn太小，部分步进无数据，则需要线性填充
+		M[tt[0]] == init && (M[tt[0]] = M[(tt[0] + 1) % tickn])
+		M[(tt.at(-1) + 1) % tickn] == init && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
 		M.close(tickn, 0)
 		for (let t of tt)
 			if (t < tickn) M[t] = min(M[t], M[t + 1]) * 0.3125 + max(M[t], M[t + 1]) * 0.6875
 		if (fix) for (let t of tt) M[t] = fix(t, TT[t]) ?? M[t]
 		M.close(tickn, 0)
-		return function* (T, ttt = tt, x = GX(T), y = GY(T)) {
+		return function* (T = 0, ttt = tt, x = GX(T), y = GY(T)) {
 			for (let t of ttt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
 		}
 	}

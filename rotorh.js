@@ -52,13 +52,21 @@ function RotorH({
 	let BQX = (n, bq = BQ) => bq * cos(TBN(n) + TBPQ) // 缸体腰X
 	let BQY = (n, bq = BQ) => bq * sin(TBN(n) + TBPQ) // 缸体腰Y
 
-	let Pt = [...Array.seq(-tPQ, tPQ, tickn, true)] // 转子顶线步进
 	// 转子型线
 	function* RR(T, Rt, RT = Tick_) {
 		for (let R of Rt?.map(Tick_.At()) ?? RT) yield [RX(T, R), RY(T, R)]
 	}
 	let TR = Tick_.map(R => atan(RX(0, R, undefined, 0), RY(0, R, undefined, 0)))
 	TR[TR.length - 1] = PI2 // 转子步进角，非均匀
+
+	let S0t = [...Array.seq(-tBPQ, tBPQ, tickn)] // 冲程0工作线步进，即缸体顶线，此处tickn整倍数
+	let S1t = S0t // 冲程1工作线步进，即缸体顶线，此处tickn整倍数
+	// 转子工作线，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数，短于转子顶线
+	function St(T, n = 0) {
+		let R1 = (atan(BQX(n - 1) - gX(T), BQY(n - 1) - gY(T)) - T).mod(PI2)
+		let R = (atan(BQX(n) - gX(T), BQY(n) - gY(T)) - T).mod(PI2)
+		return [...Array.seq(round(R1.bfind(TR)) % tickn, round(R.bfind(TR)) % tickn, tickn)] // 近似转子步进
+	}
 
 	// 转子对缸体旋转
 	function* RBT(R, bq = BQ) {
@@ -70,21 +78,14 @@ function RotorH({
 			}
 		else for (R of R) yield RBT(R, bq)
 	}
+	let Pt = [...Array.seq(-tPQ, tPQ, tickn, true)] // 转子顶线步进
 	// 缸体型线、即转子绕曲轴的外包络线
-	let BB = maxDot(RBT(Pt.map(Tick.At())), t => ((t / tBPQ) % 2 == 1 ? BQ : null))
+	let BB = [...enve(max, RBT(Pt.map(Tick.At())), t => ((t / tBPQ) % 2 == 1 ? BQ : null))(0)]
 	// 缸体腰包络、即转子绕曲轴的内包络线
-	let BQQ = minDot(RBT(Pt.map(Tick.At()), BQ - RB))
+	let BQQ = enve(min, RBT(Pt.map(Tick.At()), BQ - RB))
 
-	let S0t = [...Array.seq(-tBPQ, tBPQ, tickn)] // 冲程0工作线步进，即缸体顶线，此处tickn整倍数
-	let S1t = S0t // 冲程1工作线步进，即缸体顶线，此处tickn整倍数
-	// 转子工作线，0等同S0t，TS(1)等同S1t，每TS(s)为tickn整倍数，短于转子顶线
-	function St(T, n = 0) {
-		let R1 = (atan(BQX(n - 1) - gX(T), BQY(n - 1) - gY(T)) - T).mod(PI2)
-		let R = (atan(BQX(n) - gX(T), BQY(n) - gY(T)) - T).mod(PI2)
-		return [...Array.seq(round(R1.bfind(TR)) % tickn, round(R.bfind(TR)) % tickn, tickn)] // 近似转子步进
-	}
-
-	let SS = (T, n = 0) => [...RR(T, St(T, n))].reverse().concat(St(0, n).map(BB.At())).close() // 工作区型线
+	// 工作区型线
+	let SS = (T, n = 0) => [...RR(T, St(T, n))].reverse().concat(St(0, n).map(BB.At())).close()
 	let V0 = area(SS(0)) // 最小容积
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
@@ -185,7 +186,7 @@ function RotorH({
 		function $BQQ(style) {
 			$$({ color: '#fbb', ...style })
 			let to
-			for (let [X, Y] of BQQ) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of BQQ()) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画缸体
@@ -234,44 +235,27 @@ function RotorH({
 		)
 	}
 
-	// 点集求外包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
-	function maxDot(dots, fix, TT = Tick_, tt = Tick_.keys()) {
+	// 点集求包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
+	function enve(most = min, dots, fix, TT = Tick_, tt = Tick_.keys()) {
 		if (TT[0] != 0 || TT[tickn] != PI2) throw 'err TT'
-		let M = new Array(tickn).fill(0)
+		let init = most == min ? size * 10 : 0
+		let M = new Array(tickn).fill(init)
 		for (let dot of dots)
 			for (let [A, R] of dot) {
 				let t = ceil(TT == Tick_ ? (tickn * A) / PI2 : A.bfind(TT)) % tickn
-				M[t] = max(M[t], R)
+				M[t] = most(M[t], R)
 			}
 		tt.values ?? (tt = [...tt])
-		// M.fillHole(0) 如果tickn太小，部分步进无数据，则需要线性填充
-		M[tt[0]] == 0 && (M[tt[0]] = M[(tt[0] + 1) % tickn])
-		M[(tt.at(-1) + 1) % tickn] == 0 && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
+		// M.fillHole(init) 如果tickn太小，部分步进无数据，则需要线性填充
+		M[tt[0]] == init && (M[tt[0]] = M[(tt[0] + 1) % tickn])
+		M[(tt.at(-1) + 1) % tickn] == init && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
 		M.close(tickn, 0)
 		for (let t of tt)
 			if (t < tickn) M[t] = max(M[t], M[t + 1]) * 0.3125 + min(M[t], M[t + 1]) * 0.6875
 		if (fix) for (let t of tt) M[t] = fix(t, TT[t]) ?? M[t]
 		M.close(tickn, 0)
-		return tt.map(t => [M[t] * cos(TT[t]), M[t] * sin(TT[t])])
-	}
-	// 点集求内包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
-	function minDot(dots, fix, TT = Tick_, tt = Tick_.keys()) {
-		if (TT[0] != 0 || TT[tickn] != PI2) throw 'err TT'
-		let M = new Array(tickn).fill(size * 2)
-		for (let dot of dots)
-			for (let [A, R] of dot) {
-				let t = ceil(TT == Tick_ ? (tickn * A) / PI2 : A.bfind(TT)) % tickn
-				M[t] = min(M[t], R)
-			}
-		tt.values ?? (tt = [...tt])
-		// M.fillHole(size * 2) 如果tickn太小，部分步进无数据，则需要线性填充
-		M[tt[0]] == size * 2 && (M[tt[0]] = M[(tt[0] + 1) % tickn])
-		M[(tt.at(-1) + 1) % tickn] == size * 2 && (M[(tt.at(-1) + 1) % tickn] = M[tt.at(-1)])
-		M.close(tickn, 0)
-		for (let t of tt)
-			if (t < tickn) M[t] = max(M[t], M[t + 1]) * 0.3125 + min(M[t], M[t + 1]) * 0.6875
-		if (fix) for (let t of tt) M[t] = fix(t, TT[t]) ?? M[t]
-		M.close(tickn, 0)
-		return tt.map(t => [M[t] * cos(TT[t]), M[t] * sin(TT[t])])
+		return function* (T = 0, ttt = tt, x = 0, y = 0) {
+			for (let t of ttt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
+		}
 	}
 }
