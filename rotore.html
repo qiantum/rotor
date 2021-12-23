@@ -85,10 +85,10 @@
 						$.SS(T, n, Sstyle((canv.S[n] = s + rot.TN(n) / rot.TS(1))))
 				else {
 					let s0 = s | 0
-					if (abs(s - round(s)) <= 1 / 15) $.SSS(Spair(s), Sstyle(Spair(s)))
-					$.SSS(s0, Sstyle(s0))
+					if (abs(s - round(s)) <= 1 / 15) $.SSS(T, Spair(s), Sstyle(Spair(s)))
+					$.SSS(T, s0, Sstyle(s0))
 				}
-				$.GG(), $.E(T), $.GB(), $.G(T)
+				$.GG(T), $.E(T), $.GB(), $.G(T)
 				ticky && ($.RBC(T), $.PN(T)), $.Q(T, 0, 0)
 				$.RR(T), $.BB()
 				$.param(T)
@@ -97,7 +97,7 @@
 			}
 			function DrawR(rot, canv) {
 				let $ = rot.$(canv)
-				$.GG(), $.GB(), $.BB()
+				$.GB(), $.BB()
 				for (let s of sname.keys()) $.RR(rot.TS(rot.N == 2 ? s / 2 : s))
 				$.param()
 				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
@@ -124,7 +124,7 @@
 				})
 				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
-				let tn = t * canv.rot.N
+				let tn = t * canv.rot.NE
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')

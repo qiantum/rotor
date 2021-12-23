@@ -12,6 +12,7 @@ function RotorE({
 }) {
 	if (N != (N |= 0) || N < 2) throw 'err N'
 	let N1 = N - 1 // 缸体顶数
+	let NE = N // 曲轴转速比
 	let NS = N1 + N1 // 缸体冲程数
 	let NS4 = lcm(NS, 4) // 完整循环冲程数
 	let N2 = N + N
@@ -100,7 +101,7 @@ function RotorE({
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, N1, NS: NS4, E, GB, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { size, N, NE, NS: NS4, E, GB, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
 	Object.assign(this, { TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
@@ -143,16 +144,16 @@ function RotorE({
 			$$({ color: '#ccc', thick: 4, ...style })
 			$.moveTo(x, y), $.lineTo(x + GX(T), y + GY(T)), $$$()
 		}
-		// 画缸体小圆
+		// 画缸体节圆
 		function $GB(style) {
 			$$({ color: '#333', ...style }), $.arc(x, y, GB, 0, PI2), $$$()
 		}
-		// 画转子大圆
+		// 画转子节圆
 		function $G(T, style) {
 			$$({ color: '#999', ...style }), $.arc(x + GX(T), y + GY(T), G, 0, PI2), $$$()
 		}
-		// 画转子大圆外包
-		function $GG(style) {
+		// 画转子节圆外包
+		function $GG(T, style) {
 			$$({ color: '#ccc', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
 		}
 		// 画转子顶
@@ -210,7 +211,7 @@ function RotorE({
 			$$$(true)
 		}
 		// 画冲程区
-		function $SSS(S, style) {
+		function $SSS(T, S, style) {
 			$$(style, true)
 			let to
 			for (let [X, Y] of SSS[floor(S).mod(NS)])
