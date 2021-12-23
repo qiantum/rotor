@@ -29,12 +29,12 @@ Object.defineProperty(Array.prototype, 'At', {
 		return i => this[(i |= 0) >= 0 ? i : this.length + i]
 	},
 })
-// [from,to]序列
-Array.seq = function* (from, to, wrap, oneAll) {
-	if (wrap == null) for (; from <= to; from++) yield from
+// [a,b]序列 rev:[b,a]序列
+function* sequ(a, b, wrap, oneAll, rev) {
+	if (wrap == null) for (; a <= b; rev ? b-- : a++) yield rev ? b : a
 	else
-		for (from = from.mod(wrap), to = to.mod(wrap); yield from, oneAll || from != to; )
-			(from = (from + 1).mod(wrap)), (oneAll = false)
+		for (a = a.mod(wrap), b = b.mod(wrap); yield rev ? b : a, oneAll || a != b; )
+			rev ? (b = (b - 1).mod(wrap)) : (a = (a + 1).mod(wrap)), (oneAll = false)
 }
 for (let [k, f] of Object.entries({
 	*imap(f) {
@@ -61,7 +61,7 @@ for (let [k, f] of Object.entries({
 		return this.values ? ((this[to] = this[from]), this) : [...this.iclose()]
 	},
 }))
-	(Object.getPrototypeOf(Array.seq).prototype[k] = Object.getPrototypeOf([].keys())[k] = f),
+	(Object.getPrototypeOf(sequ).prototype[k] = Object.getPrototypeOf([].keys())[k] = f),
 		(Array.prototype[k] ??= f)
 
 Number.prototype.bfind = function (s, prop, epsi) {

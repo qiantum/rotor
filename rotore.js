@@ -27,7 +27,7 @@ function RotorE({
 	RB *= P / 100 // 转子缸体间隙
 
 	// 转子、曲轴步进角，均匀
-	let Tick_ = (this.Tick_ = Array.seq(0, tickn).map(t => (t / tickn) * PI2))
+	let Tick_ = (this.Tick_ = sequ(0, tickn).map(t => (t / tickn) * PI2))
 	let Tick = (this.Tick = Tick_.slice(0, tickn))
 	let tPQ = tickn / N2 // 转子顶腰步进
 	let TPQ = PI2 / N2 // 转子顶腰夹角
@@ -52,13 +52,12 @@ function RotorE({
 	TB[TB.length - 1] = PI2 // 缸体步进角，非均匀
 
 	// 缸体工作线步进，T每TS(s)为tickn整倍数，转子工作线==St(0,n)
-	function St(T, n = 0) {
+	function St(T, n = 0, rev) {
 		let B1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
 		let B = atan(PX(T, n, P + RB), PY(T, n, P + RB))
-		return Array.seq(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn) // 近似缸体步进
+		return sequ(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn, false, rev)
 	}
-	let S0t = [...Array.seq(-tPQ, tPQ, tickn)] // 冲程0工作线步进==[...St(0,0)]
-	let S0tRev = [...S0t].reverse()
+	let S0t = [...sequ(-tPQ, tPQ, tickn)] // 冲程0工作线步进==[...St(0,0)]
 
 	// 缸体对转子旋转
 	function* BRT(B) {
@@ -73,8 +72,8 @@ function RotorE({
 	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(BRT(Tick, Tick), true)
 	let RR = enve(min, BRT(S0t.imap(Tick.At)), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 
-	// 工作区型线，== ...RR(T, St(0, n)).rev()...
-	let SS = (T, n = 0, _ = St(T, n).imap(BB.At)) => _.iconcat(RR(T + TN(n), S0tRev)).iclose()
+	// 工作区型线，== ...RR(T + TN(n), S0t.rev)
+	let SS = (T, n = 0, _ = St(T, n).imap(BB.At)) => _.iconcat(RR(T, St(0, n, true))).iclose()
 	let V0 = area(SS(0)) // 最小容积
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
@@ -85,11 +84,11 @@ function RotorE({
 	let KK = VV / V // 总容积比工作容积
 
 	// 冲程区型线
-	let SSS = Array.seq(0, NS - 1).map(S => {
-		let dots = Array.seq(tS(S), tS(S + 1), tickn, true).imap(t =>
+	let SSS = sequ(0, NS - 1).map(S => {
+		let dots = sequ(tS(S), tS(S + 1), tickn, true).imap(t =>
 			RR(Tick_[t], S0t).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
 		)
-		let st = [...Array.seq(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
+		let st = [...sequ(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
 		return [...enve(min, dots, null, TB, st)(0, st, 0, 0), ...st.map(BB.At).reverse()].close()
 	})
 
@@ -146,7 +145,7 @@ function RotorE({
 		}
 		// 画缸体小圆
 		function $GB(style) {
-			$$(style), $.arc(x, y, GB, 0, PI2), $$$()
+			$$({ color: '#333', ...style }), $.arc(x, y, GB, 0, PI2), $$$()
 		}
 		// 画转子大圆
 		function $G(T, style) {
@@ -154,7 +153,7 @@ function RotorE({
 		}
 		// 画转子大圆外包
 		function $GG(style) {
-			$$({ color: '#ddd', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
+			$$({ color: '#ccc', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
 		}
 		// 画转子顶
 		function $P(T, n = 0, O, style) {
