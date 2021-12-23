@@ -35,8 +35,8 @@ function RotorH({
 	let TPQ = PI2 / N2 // 缸体顶腰夹角
 	let tN = n => (n * tickn) / N // 缸体顶起始步进
 	let TN = n => (n * PI2) / N // 缸体顶起始角
-	let tS = S => ((S % NS) * tickn) / NS // 冲程转子起始步进
-	let TS = S => (S * PI2) / NS // 冲程转子起始角
+	let tS = S => ((S % NS) * tickn) / NS // 冲程起始转子步进
+	let TS = S => (S * PI2) / NS // 冲程起始转子角
 	let tPQ1 = tickn / N1 / 2 // 转子顶腰步进
 	let TPQ1 = PI / N1 // 转子顶腰夹角
 	let tN1 = n => (n * tickn) / N1 // 转子顶起始步进
@@ -60,11 +60,11 @@ function RotorH({
 
 	// 转子工作线步进，T每TS(s)为tickn整倍数，短于转子顶线，缸体工作线==St(0,n)
 	function St(T, n = 0, rev) {
+		if (abs(T) < EPSI && n == 0) return sequ(-tPQ, tPQ, tickn, false, rev) // ==St(0,0)
 		let R1 = (atan(QX(n - 1) - GX(T), QY(n - 1) - GY(T)) - T).mod(PI2)
 		let R = (atan(QX(n) - GX(T), QY(n) - GY(T)) - T).mod(PI2)
 		return sequ(round(R1.bfind(TR)) % tickn, round(R.bfind(TR)) % tickn, tickn, false, rev)
 	}
-	let S0t = [...sequ(-tPQ, tPQ, tickn)] // 冲程0工作线步进==[...St(0,0)]
 
 	// 转子对缸体旋转
 	function* RBT(R, q = Q) {
@@ -93,12 +93,12 @@ function RotorH({
 	let VV = VB - area(RR(0)) // 总容积
 	let KK = VV / V // 总容积比工作容积
 
+	let QRT = T => QQ(T, St(0), -E * cos(T * N), -E * sin(T * N)) // 缸体腰包络绕转子心
 	// 冲程区型线
 	let SSS = sequ(0, NS - 1).map(S => {
-		let dots = sequ(tS(-S - 1), tS(-S), tickn, true).imap(t => {
-			let qq = QQ(Tick_[t], S0t, -E * cos(Tick_[t] * N), -E * sin(Tick_[t] * N)) // 缸体腰绕转子心
-			return qq.imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
-		})
+		let dots = sequ(tS(-S - 1), tS(-S), tickn, true).imap(t =>
+			QRT(Tick_[t]).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
+		)
 		let st = [...sequ(tS(-S - 1) - tPQ, tS(-S) + tPQ, tickn, true)] // 转子工作线，此处tickn整倍数
 		let strev = st.rev()
 		let qq = enve(min, dots, null, TR, st, 1)
@@ -169,26 +169,26 @@ function RotorH({
 			$$({ color: '#ccc', ...style }), $.arc(x + GX(T), y + GY(T), GB + E, 0, PI2), $$$()
 		}
 		// 画转子顶
-		function $P(T, n = 0, O, style) {
+		function $P(T, nr = 0, O, style) {
 			$$({ color: '#00f', ...style })
-			let R = TN1(n)
+			let R = TN1(nr)
 			$.moveTo(x + RX(T, R), y + RY(T, R)), $.lineTo(x + RX(T, R, O), y + RY(T, R, O))
 			$$$()
 		}
 		// 画转子腰
-		function $Q(T, n = 0, O, style) {
+		function $Q(T, nr = 0, O, style) {
 			$$({ color: '#f33', ...style })
-			let R = TN1(n) + TPQ1
+			let R = TN1(nr) + TPQ1
 			$.moveTo(x + RX(T, R), y + RY(T, R)), $.lineTo(x + RX(T, R, O), y + RY(T, R, O))
 			$$$()
 		}
 		// 画转子全部顶
 		function $PN(T, O = [0, G], style) {
-			for (let n = 0; n < N1; n++) $P(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
+			for (let nr = 0; nr < N1; nr++) $P(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画转子全部腰
 		function $QN(T, O = G, style) {
-			for (let n = 0; n < N1; n++) $Q(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
+			for (let nr = 0; nr < N1; nr++) $Q(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画间隙密封
 		function $RB(T, style) {
@@ -211,10 +211,11 @@ function RotorH({
 			$$$()
 		}
 		// 画转子
-		function $RR(T, style) {
+		function $RR(T, ST, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of RR(T)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of RR(T, ST != null ? St(ST) : undefined))
+				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画工作区
@@ -225,12 +226,12 @@ function RotorH({
 			$$$(true)
 		}
 		// 画冲程区
-		function $SSS(T, S, style) {
-			$$(style, true)
+		function $SSS(T, S, style, fill = true) {
+			$$(style, fill)
 			let to
 			for (let [X, Y] of SSS[floor(S).mod(NS)](T))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
-			$$$(true)
+			$$$(fill)
 		}
 		// 画接触角
 		function $RBC(T, n = 0, O = Q * 0.9 - RB, style) {

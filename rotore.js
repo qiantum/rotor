@@ -158,24 +158,24 @@ function RotorE({
 			$$({ color: '#ccc', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
 		}
 		// 画转子顶
-		function $P(T, n = 0, O, style) {
+		function $P(T, nr = 0, O, style) {
 			$$({ color: '#00f', ...style })
-			$.moveTo(x + PX(T, n), y + PY(T, n)), $.lineTo(x + PX(T, n, O), y + PY(T, n, O))
+			$.moveTo(x + PX(T, nr), y + PY(T, nr)), $.lineTo(x + PX(T, nr, O), y + PY(T, nr, O))
 			$$$()
 		}
 		// 画转子腰
-		function $Q(T, n = 0, O, style) {
+		function $Q(T, nr = 0, O, style) {
 			$$({ color: '#f33', ...style })
-			$.moveTo(x + QX(T, n), y + QY(T, n)), $.lineTo(x + QX(T, n, O), y + QY(T, n, O))
+			$.moveTo(x + QX(T, nr), y + QY(T, nr)), $.lineTo(x + QX(T, nr, O), y + QY(T, nr, O))
 			$$$()
 		}
 		// 画转子全部顶
 		function $PN(T, O = G, style) {
-			for (let n = 0; n < N; n++) $P(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
+			for (let nr = 0; nr < N; nr++) $P(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画转子全部腰
 		function $QN(T, O = [0, G], style) {
-			for (let n = 0; n < N; n++) $Q(T, n, O?.[n] ?? O?.at?.(-1) ?? O, style)
+			for (let nr = 0; nr < N; nr++) $Q(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画间隙密封
 		function $RB(T, style) {
@@ -213,12 +213,12 @@ function RotorE({
 			$$$(true)
 		}
 		// 画冲程区
-		function $SSS(T, S, style) {
-			$$(style, true)
+		function $SSS(T, S, style, fill = true) {
+			$$(style, fill)
 			let to
 			for (let [X, Y] of SSS[floor(S).mod(NS)](T))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
-			$$$(true)
+			$$$(fill)
 		}
 		// 画接触角
 		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {

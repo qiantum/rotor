@@ -62,7 +62,7 @@
 				for (let N of [2, 3, 4, 5]) {
 					let rot = Rot({ N })
 					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
-					Text(DrawR(rot, Canv())), Text(DrawR(Rot({ N, P: 0 }), Canv()))
+					Text(DrawSS(rot, Canv())), Text(DrawSS(Rot({ N, P: 0 }), Canv()))
 					Break()
 				}
 			}
@@ -95,7 +95,7 @@
 				ticky && $.RB(T)
 				return (canv.rot = rot), (canv.T = T), canv
 			}
-			function DrawR(rot, canv) {
+			function DrawSS(rot, canv) {
 				let $ = rot.$(canv)
 				$.GB(), $.BB()
 				for (let s = 0; s < rot.N * 2 - 2; s += rot.N == 2 ? 0.5 : 1) $.RR(rot.TS(s), 0)
