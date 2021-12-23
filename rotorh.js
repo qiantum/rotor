@@ -6,7 +6,7 @@ function RotorH({
 	N, // 缸体顶角数
 	E, // 偏心距
 	P = 0.5, // 缸体腰半径 / 偏心距
-	RB = 1, // 转子缸体间隙 / 顶半径 %
+	RB = 0.95, // 转子缸体间隙 / 顶半径 %
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
@@ -19,11 +19,11 @@ function RotorH({
 	tickn = ceil(tickn / N2 / N1) * N2 * N1 // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
-	E = round((E ?? (size * 0.313) / (P + N + 2.9)) * 4) / 4 // 偏心距
+	E = round((E ?? (size * 0.265) / (P + N + 1.5)) * 4) / 4 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
 	let GB = E * N // 缸体大节圆半径
 	let G = E * N1 // 转子小节圆半径
-	P = round((E * (P + N + 4)) / (1 - RB / 100)) // 缸体顶半径
+	P = round(E * (P + N + 4)) // 缸体顶半径
 	let Q = P - E - E // 缸体腰半径
 	RB *= P / 100 // 转子缸体间隙
 	let RP = P - E - RB // 转子顶半径

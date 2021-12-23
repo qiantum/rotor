@@ -109,7 +109,7 @@
 				canvas.width = canvas.height = size
 				let text = $.querySelectorAll('pre')
 				main.insertBefore($, main.lastElementChild)
-				return { canvas, text, param: text[3] }
+				return { canvas, text, param: text[2] }
 			}
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
@@ -128,7 +128,7 @@
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
-				$[2].textContent = texts[2] ?? ''
+				$[3].textContent = texts[2] ?? ''
 				return canv
 			}
 			function Spair(s) {
@@ -190,7 +190,7 @@
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a>
 			<label><input id="eqvv" type="checkbox" />等排量</label>
-			<label><input id="vert" type="checkbox" />竖向</label>
+			<label><input id="vert" type="checkbox" />竖屏</label>
 			<hr />
 			<label><input id="ticky" type="checkbox" />冲程步进</label>
 			<input id="tick" type="range" value="0" disabled />
@@ -279,7 +279,7 @@
 			display: inline-block;
 			margin: 0.7rem 0;
 			font-size: 13.5px;
-			text-align: right;
+			text-align: left;
 		}
 		nav {
 			position: sticky;
