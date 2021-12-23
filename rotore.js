@@ -90,7 +90,8 @@ function RotorE({
 			RR(Tick_[t], S0t).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
 		)
 		let st = [...sequ(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
-		return [...enve(min, dots, null, TB, st)(0, st, 0, 0), ...st.map(BB.At).reverse()].close()
+		let s = st.imap(BB.At).concat(enve(min, dots, null, TB, st, 0)().rev()).close()
+		return _ => s
 	})
 
 	// 转子顶与缸体接触角、及接触步进角
@@ -214,7 +215,7 @@ function RotorE({
 		function $SSS(T, S, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SSS[floor(S).mod(NS)])
+			for (let [X, Y] of SSS[floor(S).mod(NS)](T))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
@@ -235,7 +236,7 @@ function RotorE({
 	}
 
 	// 点集求包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
-	function enve(most = min, dots, fix, TT = Tick_, tt = Tick_.keys()) {
+	function enve(most = min, dots, fix, TT = Tick_, tt = Tick_.keys(), xyk = 1) {
 		if (TT[0] != 0 || TT[tickn] != PI2) throw 'err TT'
 		let init = most == min ? size * 10 : 0
 		let M = new Array(tickn).fill(init)
@@ -253,8 +254,8 @@ function RotorE({
 			if (t < tickn) M[t] = min(M[t], M[t + 1]) * 0.3125 + max(M[t], M[t + 1]) * 0.6875
 		if (fix) for (let t of tt) M[t] = fix(t, TT[t]) ?? M[t]
 		M.close(tickn, 0)
-		return function* (T = 0, ttt = tt, x = GX(T), y = GY(T)) {
-			for (let t of ttt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
+		return function* (T = 0, t_ = tt, x = xyk * GX(T), y = xyk * GY(T)) {
+			for (let t of t_) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
 		}
 	}
 }

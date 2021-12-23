@@ -27,7 +27,6 @@ function RotorH({
 	let Q = P - E - E // 缸体腰半径
 	RB *= P / 100 // 转子缸体间隙
 	let RP = P - E - RB // 转子顶半径
-	let RQ = RP - E - E // 转子腰半径
 
 	// 缸体、曲轴步进角，均匀
 	let Tick_ = (this.Tick_ = sequ(0, tickn).map(t => (t / tickn) * PI2))
@@ -54,7 +53,7 @@ function RotorH({
 
 	// 转子型线
 	function* RR(T, Rt, RT = Tick_) {
-		for (let R of Rt?.map(Tick_.At) ?? RT) yield [RX(T, R), RY(T, R)]
+		for (let R of Rt?.imap(Tick_.At) ?? RT) yield [RX(T, R), RY(T, R)]
 	}
 	let TR = Tick_.map(R => atan(RX(0, R, undefined, 0), RY(0, R, undefined, 0)))
 	TR[TR.length - 1] = PI2 // 转子步进角，非均匀
@@ -77,11 +76,11 @@ function RotorH({
 			}
 		else for (R of R) yield RBT(R, q)
 	}
-	let PT = sequ(-tPQ1, tPQ1, tickn, true).map(Tick.At) // 转子顶线步进角
+	let RPT = sequ(-tPQ1, tPQ1, tickn, true).map(Tick.At) // 转子顶线步进角
 	// 缸体型线、即转子绕曲轴的外包络线
-	let BB = [...enve(max, RBT(PT), t => ((t / tPQ) % 2 == 1 ? Q : null))(0)]
+	let BB = [...enve(max, RBT(RPT), t => ((t / tPQ) % 2 == 1 ? Q : null))()]
 	// 缸体腰包络、即转子绕曲轴的内包络线
-	let QQ = enve(min, RBT(PT, Q - RB))
+	let QQ = enve(min, RBT(RPT, Q - RB))
 
 	// 工作区型线
 	let SS = (T, n = 0, _ = St(0, n).imap(BB.At)) => _.iconcat(RR(T, St(T, n, true))).iclose()
@@ -95,7 +94,16 @@ function RotorH({
 	let KK = VV / V // 总容积比工作容积
 
 	// 冲程区型线
-	let SSS = sequ(0, NS - 1).map(S => [...RR(0)])
+	let SSS = sequ(0, NS - 1).map(S => {
+		let dots = sequ(tS(-S - 1), tS(-S), tickn, true).imap(t => {
+			let qq = QQ(Tick_[t], S0t, -E * cos(Tick_[t] * N), -E * sin(Tick_[t] * N)) // 缸体腰绕转子心
+			return qq.imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
+		})
+		let st = [...sequ(tS(-S - 1) - tPQ, tS(-S) + tPQ, tickn, true)] // 转子工作线，此处tickn整倍数
+		let strev = st.rev()
+		let qq = enve(min, dots, null, TR, st, 1)
+		return T => RR(T, st).iconcat(qq(T, strev)).iclose()
+	})
 
 	// 缸体腰与转子接触角、及接触步进角
 	function RBC(T, n = 0) {
@@ -154,7 +162,7 @@ function RotorH({
 		}
 		// 画转子节圆
 		function $G(T, style) {
-			$$({ color: '#999', ...style }), $.arc(x + GX(T), y + GY(T), G, 0, PI2), $$$()
+			$$({ color: '#ccc', ...style }), $.arc(x + GX(T), y + GY(T), G, 0, PI2), $$$()
 		}
 		// 画缸体节圆绕转子外包
 		function $GG(T, style) {
@@ -220,7 +228,7 @@ function RotorH({
 		function $SSS(T, S, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SSS[floor(S).mod(NS)])
+			for (let [X, Y] of SSS[floor(S).mod(NS)](T))
 				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$(true)
 		}
@@ -241,7 +249,7 @@ function RotorH({
 	}
 
 	// 点集求包络线 dots:[[ [A, R] ]] tt:正向步进、可卷
-	function enve(most = min, dots, fix, TT = Tick_, tt = Tick_.keys()) {
+	function enve(most = min, dots, fix, TT = Tick_, tt = Tick_.keys(), xyk = 0) {
 		if (TT[0] != 0 || TT[tickn] != PI2) throw 'err TT'
 		let init = most == min ? size * 10 : 0
 		let M = new Array(tickn).fill(init)
@@ -259,8 +267,8 @@ function RotorH({
 			if (t < tickn) M[t] = max(M[t], M[t + 1]) * 0.3125 + min(M[t], M[t + 1]) * 0.6875
 		if (fix) for (let t of tt) M[t] = fix(t, TT[t]) ?? M[t]
 		M.close(tickn, 0)
-		return function* (T = 0, ttt = tt, x = 0, y = 0) {
-			for (let t of ttt) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
+		return function* (T = 0, t_ = tt, x = xyk * GX(T), y = xyk * GY(T)) {
+			for (let t of t_) yield [x + M[t] * cos(T + TT[t]), y + M[t] * sin(T + TT[t])]
 		}
 	}
 }
