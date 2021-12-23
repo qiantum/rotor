@@ -52,11 +52,11 @@
 				Tick()
 			} else if (conf.N >= 2) {
 				let rot = Rot()
-				let ssub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
-				for (let ss = 0; ss < rot.NS; ss++) {
-					for (let s = ss; s < ss + 1; s = (round(s * ssub) + 1) / ssub)
-						Text(Draw(rot, s, Canv()), ssub)
-					if (ssub >= rot.NS || ss & 1) Break()
+				let sub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
+				for (let ns = 0; ns < rot.NS; ns++) {
+					for (let s = ns; s < ns + 1; s = (round(s * sub) + 1) / sub)
+						Text(Draw(rot, s, Canv()), sub)
+					if (sub >= rot.NS || ns & 1) Break()
 				}
 			} else {
 				for (let N of [2, 3, 4, 5]) {
@@ -98,7 +98,7 @@
 			function DrawR(rot, canv) {
 				let $ = rot.$(canv)
 				$.GB(), $.BB()
-				for (let s of sname.keys()) $.RR(rot.TS(rot.N == 2 ? s / 2 : s))
+				for (let s = 0; s < rot.N * 2 - 2; s += rot.N == 2 ? 0.5 : 1) $.RR(rot.TS(s), 0)
 				$.param()
 				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
 			}

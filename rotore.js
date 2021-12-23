@@ -34,8 +34,8 @@ function RotorE({
 	let TPQ = PI2 / N2 // 转子顶腰夹角
 	let tN = n => (n * tickn) / N // 转子腰起始步进
 	let TN = n => (n * PI2) / N // 转子腰起始角
-	let tS = S => ((S % NS) * tickn) / NS // 冲程转子起始步进
-	let TS = S => (S * PI2) / NS // 冲程转子起始角
+	let tS = S => ((S % NS) * tickn) / NS // 冲程起始转子步进
+	let TS = S => (S * PI2) / NS // 冲程起始转子角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * N) // 转子心X
@@ -52,13 +52,13 @@ function RotorE({
 	let TB = BB.map(([X, Y]) => atan(X, Y))
 	TB[TB.length - 1] = PI2 // 缸体步进角，非均匀
 
-	// 缸体工作线步进，T每TS(s)为tickn整倍数，转子工作线==St(0,n)
+	// 缸体工作线步进，T每TS(s)为tickn整倍数，短于缸体顶线，转子工作线==St(0,n)
 	function St(T, n = 0, rev) {
+		if (abs(T) < EPSI && n == 0) return sequ(-tPQ, tPQ, tickn, false, rev) // ==St(0,0)
 		let B1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
 		let B = atan(PX(T, n, P + RB), PY(T, n, P + RB))
 		return sequ(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn, false, rev)
 	}
-	let S0t = [...sequ(-tPQ, tPQ, tickn)] // 冲程0工作线步进==[...St(0,0)]
 
 	// 缸体对转子旋转
 	function* BRT(B) {
@@ -71,9 +71,9 @@ function RotorE({
 		else for (B of B) yield BRT(B)
 	}
 	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(BRT(Tick, Tick), true)
-	let RR = enve(min, BRT(S0t.imap(Tick.At)), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+	let RR = enve(min, BRT(St(0).imap(Tick.At)), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 
-	// 工作区型线，== ...RR(T + TN(n), S0t.rev)
+	// 工作区型线，== ...RR(T + TN(n), St(0, 0, true))
 	let SS = (T, n = 0, _ = St(T, n).imap(BB.At)) => _.iconcat(RR(T, St(0, n, true))).iclose()
 	let V0 = area(SS(0)) // 最小容积
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
@@ -87,7 +87,7 @@ function RotorE({
 	// 冲程区型线
 	let SSS = sequ(0, NS - 1).map(S => {
 		let dots = sequ(tS(S), tS(S + 1), tickn, true).imap(t =>
-			RR(Tick_[t], S0t).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
+			RR(Tick_[t], St(0)).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
 		)
 		let st = [...sequ(tS(S) - tPQ, tS(S + 1) + tPQ, tickn, true)] // 缸体工作线，此处tickn整倍数
 		let s = st.imap(BB.At).concat(enve(min, dots, null, TB, st, 0)().rev()).close()
@@ -198,10 +198,11 @@ function RotorE({
 			$$$()
 		}
 		// 画转子
-		function $RR(T, style) {
+		function $RR(T, ST, style) {
 			$$(style)
 			let to
-			for (let [X, Y] of RR(T)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of RR(T, ST != null ? St(ST) : undefined))
+				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
 			$$$()
 		}
 		// 画工作区
