@@ -22,8 +22,8 @@
 			//let scolor = ['#c9c9ff56', '#e3f3e3', '#ffc0c05c', '#e7e6ec']
 			//let scolor = ['#b6f6b650', '#e6f3ff', '#ffd0d95c', '#eeecf0']
 			//let scolor = ['#a6f0a356', '#dcecff', '#ffc0c05c', '#e7e6ec']
-			let scolor = ['#dcf9dc', '#dcecff', '#ffe9e6', '#e7e6ec']
-			//let slight = ['#f0fff0', '#f6f9ff', '#fff6f6', '#f6f5f7']
+			let sfill = ['#dcf9dc', '#dcecff', '#ffe9e6', '#e7e6ec']
+			let sline = ['#0b0', '#33f', '#f33', '#666']
 			let sdual = mode.get('.2') != null
 			let size = mode.get('size') ?? 320
 			let conf = { N: mode.get('n') | 0, size }
@@ -98,7 +98,7 @@
 			function DrawSS(rot, canv) {
 				let $ = rot.$(canv)
 				$.GB(), $.BB()
-				for (let s = 0; s < rot.N * 2 - 2; s += rot.N == 2 ? 0.5 : 1) $.RR(rot.TS(s), 0)
+				for (let s = 0; s < rot.N * 2 - 2; s += rot.N == 2 ? 0.5 : 1) $.RR(rot.TS(s), 0, Sstyle(s, sline))
 				$.param()
 				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
 			}
@@ -135,7 +135,7 @@
 				let sp = round(s)
 				return sp + (sdual ? sp ^ 1 : sp - 1) - (s | 0)
 			}
-			function Sstyle(s, color = scolor) {
+			function Sstyle(s, color = sfill) {
 				return { color: color[floor(s + EPSI).mod(sname.length)] }
 			}
 
