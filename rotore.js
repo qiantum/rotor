@@ -130,15 +130,17 @@ function RotorE({
 		let y = midy ?? canvas.height / 2 // 曲轴心Y
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
 
-		function $$({ color = '#000', opa = '', thick = 1 } = {}, fill) {
+		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
 			opa.length == 1 && /#....../.test(color) && (opa += opa)
 			opa.length > 0 && /#....(....)?$/.test(color) && (color = color.slice(0, -opa.length))
 			fill ? ($.fillStyle = color + opa) : ($.strokeStyle = color + opa)
+			dash && $.setLineDash(dash)
 		}
 		function $$$(fill) {
 			fill ? $.fill() : $.stroke(), ($.lineWidth = 1)
 			fill ? ($.fillStyle = '#000') : ($.strokeStyle = '#000')
+			$.setLineDash([])
 		}
 		// 画偏心线，即曲轴
 		function $E(T, style) {

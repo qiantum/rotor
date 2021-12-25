@@ -23,7 +23,9 @@
 			//let scolor = ['#b6f6b650', '#e6f3ff', '#ffd0d95c', '#eeecf0']
 			//let scolor = ['#a6f0a356', '#dcecff', '#ffc0c05c', '#e7e6ec']
 			let sfill = ['#dcf9dc', '#dcecff', '#ffe9e6', '#e7e6ec']
-			let sline = ['#0b0', '#33f', '#f33', '#666']
+			let sline = ['#0b0', '#24f', '#f42', '#666']
+			let sdash = [[2, 6]]
+			sdash.push([0, 2, 2, 4]), sdash.push([0, 4, 2, 2]), sdash.push([0, 6, 2, 0])
 			let sdual = mode.get('.2') != null
 			let size = mode.get('size') ?? 320
 			let conf = { N: mode.get('n') | 0, size }
@@ -97,9 +99,8 @@
 			}
 			function DrawSS(rot, canv) {
 				let $ = rot.$(canv)
-				$.GB(), $.BB()
-				for (let s = 0; s < rot.N * 2 - 2; s += rot.N == 2 ? 0.5 : 1) $.RR(rot.TS(s), 0, Sstyle(s, sline))
-				$.param()
+				$.GB(), $.param()
+				for (let s = 0; s < rot.NS; s++) $.SSS(0, s, Sstyle(s, sline, sdash), false)
 				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
 			}
 
@@ -109,7 +110,7 @@
 				canvas.width = canvas.height = size
 				let text = $.querySelectorAll('pre')
 				main.insertBefore($, main.lastElementChild)
-				return { canvas, text, param: text[2] }
+				return { canvas, text, param: text[3] }
 			}
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
@@ -128,15 +129,16 @@
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
-				$[3].textContent = texts[2] ?? ''
+				$[2].textContent = texts[2] ?? ''
 				return canv
 			}
 			function Spair(s) {
 				let sp = round(s)
 				return sp + (sdual ? sp ^ 1 : sp - 1) - (s | 0)
 			}
-			function Sstyle(s, color = sfill) {
-				return { color: color[floor(s + EPSI).mod(sname.length)] }
+			function Sstyle(s, color = sfill, dash) {
+				s = floor(s + EPSI).mod(sname.length)
+				return { color: color[s], dash: dash?.[s], thick: dash && 4 }
 			}
 
 			function Url(url, k, ok, v, replace) {
@@ -206,10 +208,10 @@
 <!--			--->E 偏心距
 <!--			--->P 转子顶半径
 <!--			--->K 压缩比、膨胀比
-<!--			--->V 工作容积(单区最大-最小) | 当前(单区-最小)
-<!--			--->3倍连杆比 | 余弦比 | 当前比 (与工作容积比)
-<!--			--->总容积(排量、缸体-转子):与工作容积比 缸体体积
-<!--			--->RB 转子缸体间隙 C 最大接触角(转子缸体法向夹角) | 当前
+<!--			--->V 工作容积(单区最大-最小) | 瞬时(单区-最小)
+<!--			--->3倍连杆比 | 余弦比 | 瞬时比 (与工作容积比)
+<!--			--->总容积(排量、缸体-转子):与工作容积比  缸体体积
+<!--			--->RB 转子缸体间隙 C 最大接触角(转子缸体法向夹角) | 瞬时
 <!--		---></pre>
 				（长度：毫米，容积即面积：平方厘米）<br />
 				版权所有 <a href="http://qiantum.com">蔡倩彦</a> | 开源许可 GPLv3
@@ -259,6 +261,7 @@
 			padding: 0 0.1rem;
 			display: grid;
 			grid-template: auto / auto auto;
+			grid-auto-flow: row dense;
 			place-content: space-between space-between;
 		}
 		figure pre {
@@ -266,7 +269,8 @@
 			font-size: 13px;
 		}
 		figure pre:nth-child(2),
-		figure pre:nth-child(4) {
+		figure pre:nth-child(3) {
+			grid-area: auto/2/auto/3;
 			text-align: right;
 		}
 		summary {
