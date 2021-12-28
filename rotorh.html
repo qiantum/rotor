@@ -99,7 +99,7 @@
 			}
 			function DrawSS(rot, canv) {
 				let $ = rot.$(canv)
-				$.GG(0), $.param()
+				$.GG(0), $.G(0), $.param()
 				for (let s = 0; s < rot.NS; s++) $.SSS(0, s, Sstyle(s, sline, sdash), false)
 				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
 			}
