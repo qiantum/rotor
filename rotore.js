@@ -6,7 +6,7 @@ function RotorE({
 	N, // 转子顶角数
 	E, // 偏心距
 	P = N == 2 ? 1.4 : N == 3 ? 1.9 : 1.1 + N * 0.28, // 转子顶半径 / 偏心距
-	RB = 1.18, // 转子缸体间隙 / 顶半径 %
+	RB = 1.2,
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 }) {
@@ -25,7 +25,6 @@ function RotorE({
 	let G = E * N // 转子大节圆半径
 	P = round(E * (P + N + 2)) // 转子顶半径
 	let Q = P - E - E // 转子腰半径
-	RB *= P / 100 // 转子缸体间隙
 
 	// 转子、曲轴步进角，均匀
 	let Tick_ = (this.Tick_ = sequ(0, tickn).map(t => (t / tickn) * PI2))

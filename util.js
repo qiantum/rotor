@@ -101,7 +101,7 @@ function area(s) {
 	return round(a / EPSI) * EPSI
 }
 
-Array.prototype.fillHole = function (hole) {
+function fillhole(hole) {
 	let ii = this.findIndex(v => v != hole)
 	if (ii < 0) throw 'all hole'
 	let len = this.length
@@ -129,7 +129,7 @@ function matran(row) {
 // TODO 非闭合曲线不适用，需改进
 if (false) {
 	// 正向曲线集求内包络线 curves:[[ [A, R, X, Y] ]] tt:正向步进、可卷
-	function MinCurve(curves, wrap, tt = Tick_.keys()) {
+	function enveCurve(curves, wrap, tt = Tick_.keys()) {
 		let M
 		for (let cc of curves) {
 			cc.values ?? (cc = [...cc])

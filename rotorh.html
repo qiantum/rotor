@@ -70,10 +70,7 @@
 			}
 			function Rot(con) {
 				let rot = new RotorH({ ...conf, ...con })
-				if (eqvv) {
-					let e = sqrt(13200 / rot.VV)
-					rot = new RotorH({ ...conf, ...con, E: rot.E * e, RB: 122 / rot.P / e })
-				}
+				if (eqvv) rot = new RotorH({ ...conf, ...con, E: rot.E * sqrt(13200 / rot.VV) })
 				return rot
 			}
 
