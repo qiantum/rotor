@@ -97,7 +97,8 @@ function area(s) {
 	let [xx, yy] = [x0, y0]
 	let a = 0
 	for (let [x, y] of s) (a += (xx - x) * (yy + y)), (xx = x), (yy = y)
-	return (a + (xx - x0) * (yy + y0)) / 2 // 闭合
+	a = (a + (xx - x0) * (yy + y0)) / 2 // 闭合
+	return round(a / EPSI) * EPSI
 }
 
 Array.prototype.fillHole = function (hole) {
