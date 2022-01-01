@@ -78,6 +78,7 @@ function RotorE({
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
 	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
+	let VN = V * N1 // 排量
 	let VB = area(BB) // 总体积
 	let KB = VB / V // 总体积比工作容积
 	let VV = VB - area(RR(0)) // 总容积
@@ -101,24 +102,23 @@ function RotorE({
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NE, NS: NS4, E, GB, G, P, Q, RB, V, K, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { size, N, NE, NS: NS4, E, GB, G, P, Q, RB, V, K, VN, VV, KK, VB, KB, RBCC })
 	Object.assign(this, { TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
 	function params(T) {
-		let p1 = '__'
+		let p = ''
 		if (T != null) {
+			p = _`|${(RBC(T)[0] / PI2) * 360}{02}__`
 			let a = (T / TS(1)) * PI
 			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
-			p1 = _`|${VS(T) / 100}{03}__${pis}{.2}|${(1 - cos(a)) / 2}{.2}|${VS(T) / V}{.2}__`
+			p += _`${VS(T) / 100}{03}:${VS(T) / V}{.2}|${(1 - cos(a)) / 2}{.2}|${pis}{.2}`
 		}
-		let p2 = T != null ? _`|${(RBC(T)[0] / PI2) * 360}{02}` : ''
 		return (
-			_`N${N}__E${E}{}__P${P}{}__K${K}{1}__V${V / 100}{}` +
-			p1 +
-			_`${VV / 100}{}:${KK}{1} ${VB / 100}{}__` +
+			_`N${N}__E${E}{1}__P${P}{}__K${K}{1}__` +
+			_`V${V / 100}{1} ${VN / 100}{1}__${VV / 100}{}:${KK}{1} ${VB / 100}{}__` +
 			_`RB${RB}{1} C${(RBCC / PI2) * 360}{}` +
-			p2
+			p
 		)
 	}
 	console.log(...params().split('__'), _`Vmin${V0 / 100}{1} tn${tickn}`)
