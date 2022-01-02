@@ -35,7 +35,7 @@ let FORMATTER = function (o, f) {
 	digi = parseFloat(digi)
 	if (pad == null) o = o.toFixed(digi)
 	else if (pad != '.') o = o.toFixed().padStart(digi, pad)
-	else if (o.toFixed().length >= digi) o = o.toFixed()
+	else if (o.toFixed().replace(/^0/, '').length >= digi) o = o.toFixed()
 	else if (o.toFixed(digi).startsWith('0.')) o = o.toFixed(digi).slice(1)
 	else o = o.toPrecision(digi)
 	return o + (perc ? '%' : '')

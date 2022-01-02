@@ -5,10 +5,11 @@
 function RotorE({
 	N, // 转子顶角数
 	E, // 偏心距
-	P = N == 2 ? 1.4 : N == 3 ? 1.9 : 1.1 + N * 0.28, // 转子顶半径 / 偏心距
-	RB = 1.2,
+	P = N == 2 ? 1.3 : 2, // 转子顶半径 / 偏心距
+	RB = 0.4,
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
+	Evv,
 }) {
 	if (N != (N |= 0) || N < 2) throw 'err N'
 	let N1 = N - 1 // 缸体顶数
@@ -19,11 +20,12 @@ function RotorE({
 	tickn = ceil(tickn / N2 / N1) * N2 * N1 // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
-	E = round((E ?? (size * 0.313) / (P + N + 1.75)) * 4) / 4 // 偏心距
+	E ??= Evv ? (size * 0.0872) / sqrt(P + N * 0.8 - 0.9) : (size * 0.13) / sqrt(P + N + 2.75)
+	P = round(E * (P + N + 2) * 2) / 2 // 转子顶半径
+	E = round(E * 3) / 3 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
 	let GB = E * N1 // 缸体小节圆半径
 	let G = E * N // 转子大节圆半径
-	P = round(E * (P + N + 2)) // 转子顶半径
 	let Q = P - E - E // 转子腰半径
 
 	// 转子、曲轴步进角，均匀
@@ -78,11 +80,10 @@ function RotorE({
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
 	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
-	let VN = V * N1 // 排量
+	let VN = V * N // 排量
+	let VV = V * N1 // 排量
 	let VB = area(BB) // 总体积
 	let KB = VB / V // 总体积比工作容积
-	let VV = VB - area(RR(0)) // 总容积
-	let KK = VV / V // 总容积比工作容积
 
 	// 冲程区型线
 	let SSS = sequ(0, NS - 1).map(S => {
@@ -102,7 +103,7 @@ function RotorE({
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NE, NS: NS4, E, GB, G, P, Q, RB, V, K, VN, VV, KK, VB, KB, RBCC })
+	Object.assign(this, { size, N, NE, NS: NS4, E, GB, G, P, Q, RB, V, K, VN, VV, VB, KB, RBCC })
 	Object.assign(this, { TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
@@ -115,9 +116,9 @@ function RotorE({
 			p += _`${VS(T) / 100}{03}:${VS(T) / V}{.2}|${(1 - cos(a)) / 2}{.2}|${pis}{.2}`
 		}
 		return (
-			_`N${N}__E${E}{1}__P${P}{}__K${K}{1}__` +
-			_`V${V / 100}{1} ${VN / 100}{1}__${VV / 100}{}:${KK}{1} ${VB / 100}{}__` +
-			_`RB${RB}{1} C${(RBCC / PI2) * 360}{}` +
+			_`N${N}__E${E}{}__P${P}{}__K${K}{1}__` +
+			_`V${V / 100}{} ${VB / 100}{}__${VV / 100}{} ${VN / 100}{}__` +
+			_`RB${RB}{.2} C${(RBCC / PI2) * 360}{}` +
 			p
 		)
 	}
