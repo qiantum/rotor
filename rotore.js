@@ -33,12 +33,13 @@ function RotorE({
 	// 转子、曲轴步进角，均匀
 	let Tick_ = (this.Tick_ = sequ(0, tickn).map(t => (t / tickn) * PI2))
 	let Tick = (this.Tick = Tick_.slice(0, tickn))
-	let tPQ = tickn / N2 // 转子顶腰步进
-	let TPQ = PI2 / N2 // 转子顶腰夹角
-	let tN = n => (n * tickn) / N // 转子腰起始步进
-	let TN = n => (n * PI2) / N // 转子腰起始角
-	let tS = S => ((S % NS) * tickn) / NS // 冲程起始转子步进
-	let TS = S => (S * PI2) / NS // 冲程起始转子角
+	// 转子腰：
+	let tPQ = tickn / N2 // 顶腰步进
+	let TPQ = PI2 / N2 // 顶腰夹角
+	let tN = n => (n * tickn) / N // 起始步进
+	let TN = n => (n * PI2) / N // 起始角
+	let tS = S => ((S % NS) * tickn) / NS // 冲程起始步进
+	let TS = S => (S * PI2) / NS // 冲程起始角
 
 	// 曲轴心 X=0 Y=0
 	let GX = T => E * cos(T * NE) // 转子心X
