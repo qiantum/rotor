@@ -13,7 +13,7 @@
 			let mode = url.searchParams
 			let body = document.body
 			let main = body.querySelector('main')
-			let eqvv = mode.get('eqvv') != null
+			let eqvb = mode.get('eqvb') != null
 			let ticky = mode.get('tick') != null
 			let tick = body.querySelector('#tick')
 
@@ -69,9 +69,7 @@
 				}
 			}
 			function Rot(con) {
-				let rot = new RotorH({ ...conf, ...con })
-				if (eqvv) rot = new RotorH({ ...conf, ...con, E: rot.E * sqrt(16400 / rot.VN) })
-				return rot
+				return new RotorH({ ...conf, ...con })
 			}
 
 			function Draw(rot, s, canv, sss) {
@@ -122,7 +120,7 @@
 				})
 				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
-				let tn = t * canv.rot.NE
+				let tn = t * canv.rot.NR
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
@@ -145,23 +143,19 @@
 				if (replace) history.replaceState(null, '', url), location.reload()
 				return url
 			}
-			body.querySelector('#eqvv').checked = eqvv
-			body.querySelector('#eqvv').onchange = function () {
-				Url(url, 'eqvv', !(this.checked = eqvv), null, true)
-			}
+			body.querySelector('#eqvb').checked = eqvb
+			body.querySelector('#eqvn').checked = !eqvb
+			body.querySelector('#eqvb').onchange = _ => Url(url, 'eqvb', true, null, true)
+			body.querySelector('#eqvn').onchange = _ => Url(url, 'eqvb', false, null, true)
 			body.querySelector('#ticky').checked = ticky
-			body.querySelector('#ticky').onchange = function () {
-				Url(url, 'tick', !(this.checked = ticky), null, true)
-			}
+			body.querySelector('#ticky').onchange = _ => Url(url, 'tick', !ticky, null, true)
 			let vert = mode.get('vert') != null
 			vert ? body.classList.add('vert') : body.classList.remove('vert')
 			body.querySelector('#vert').checked = vert
-			body.querySelector('#vert').onchange = function () {
-				Url(url, 'vert', !(this.checkd = vert), null, true)
-			}
+			body.querySelector('#vert').onchange = _ => Url(url, 'vert', !vert, null, true)
 			for (let a of body.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
-				Url(u, 'eqvv', eqvv), Url(u, 'tick', ticky), Url(u, 'vert', vert)
+				Url(u, 'eqvb', eqvb), Url(u, 'tick', ticky), Url(u, 'vert', vert)
 				a.href = u
 			}
 			console.log('msec', new Date() - time)
@@ -188,7 +182,8 @@
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a>
-			<label><input id="eqvv" type="checkbox" />等排量</label>
+			<label style="display: none"><input id="eqvb" type="checkbox" />等排量</label>
+			<label style="display: none"><input id="eqvv" type="checkbox" />等扫气</label>
 			<label><input id="vert" type="checkbox" />竖屏</label>
 			<hr />
 			<label><input id="ticky" type="checkbox" />冲程步进</label>
@@ -205,10 +200,10 @@
 <!--			--->E 偏心距
 <!--			--->P 缸体顶半径
 <!--			--->K 压缩比、膨胀比
-<!--			--->V 工作容积(单区最大-最小) | 瞬时(单区-最小)
-<!--			--->3倍连杆比 | 余弦比 | 瞬时比 (与工作容积比)
+<!--			--->V 工作容积(单区最大-最小) 缸体体积
+<!--			--->排量(工作容积*缸体顶角数) = 扫气
 <!--			--->RB 转子缸体间隙 C 最大接触角(转子缸体法向夹角) | 瞬时
-<!--			--->总容积(缸体-转子):与工作容积比 排量 缸体体积
+<!--			--->瞬时容积(单区-最小):与工作容积比 | 余弦比 | 3倍连杆比
 <!--		---></pre>
 				（长度：毫米，容积即面积：平方厘米）<br />
 				版权所有 <a href="http://qiantum.com">蔡倩彦</a> | 开源许可 GPLv3
@@ -276,6 +271,7 @@
 			text-align: center;
 		}
 		summary pre {
+			text-align: right;
 			display: inline-block;
 			margin: 0.7rem 0;
 			font-size: 13.5px;
