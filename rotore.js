@@ -26,8 +26,8 @@ function RotorE({
 	P = round(E * (P + N + 2) * 2) / 2 // 转子顶半径
 	E = round(E * 3) / 3 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
-	let GB = E * NB // 缸体小节圆半径
-	let G = E * NR // 转子大节圆半径
+	let GB = E * NB // 缸体节圆半径
+	let G = E * NR // 转子节圆半径
 	let Q = P - E - E // 转子腰半径
 
 	// 转子、曲轴步进角，均匀
@@ -82,8 +82,8 @@ function RotorE({
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
 	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
-	let VN = V * N // 扫气
-	let VB = V * NB // 排量
+	let VN = V * N // 单循环排量
+	let VB = V * NB // 标称排量、曲轴单圈排量
 	let VV = area(BB) // 总体积
 	let KK = VV / V // 总体积比工作容积
 
@@ -118,7 +118,7 @@ function RotorE({
 			p += _`${VS(T) / 100}{03}:${VS(T) / V}{.2}|${(1 - cos(a)) / 2}{.2}|${pis}{.2}`
 		}
 		return (
-			_`N${N}__E${E}{}__P${P}{1}__K${K}{}__` +
+			_`N${N}__E${E}{}__P${P}{}__K${K}{}__` +
 			_`V${V / 100}{} ${VV / 100}{}__${VB / 100}{} ${VN / 100}{}__` +
 			_`RB${RB}{.2} C${(RBCC / PI2) * 360}{}` +
 			p
