@@ -13,7 +13,7 @@
 			let mode = url.searchParams
 			let body = document.body
 			let main = body.querySelector('main')
-			let eqvv = mode.get('eqvv') != null
+			let eqvb = mode.get('eqvb') != null
 			let ticky = mode.get('tick') != null
 			let tick = body.querySelector('#tick')
 
@@ -69,7 +69,7 @@
 				}
 			}
 			function Rot(con) {
-				return new RotorE({ ...conf, ...con, Evv: eqvv })
+				return new RotorE({ ...conf, ...con, Evb: eqvb })
 			}
 
 			function Draw(rot, s, canv, sss) {
@@ -120,7 +120,7 @@
 				})
 				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
-				let tn = t * canv.rot.NE
+				let tn = t * canv.rot.NR
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
@@ -143,9 +143,9 @@
 				if (replace) history.replaceState(null, '', url), location.reload()
 				return url
 			}
-			body.querySelector('#eqvv').checked = eqvv
-			body.querySelector('#eqvv').onchange = function () {
-				Url(url, 'eqvv', !(this.checked = eqvv), null, true)
+			body.querySelector('#eqvb').checked = eqvb
+			body.querySelector('#eqvb').onchange = function () {
+				Url(url, 'eqvb', !(this.checked = eqvb), null, true)
 			}
 			body.querySelector('#ticky').checked = ticky
 			body.querySelector('#ticky').onchange = function () {
@@ -159,7 +159,7 @@
 			}
 			for (let a of body.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
-				Url(u, 'eqvv', eqvv), Url(u, 'tick', ticky), Url(u, 'vert', vert)
+				Url(u, 'eqvb', eqvb), Url(u, 'tick', ticky), Url(u, 'vert', vert)
 				a.href = u
 			}
 			console.log('msec', new Date() - time)
@@ -186,7 +186,7 @@
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a>
-			<label><input id="eqvv" type="checkbox" />等排量</label>
+			<label><input id="eqvb" type="checkbox" />等排量</label>
 			<label><input id="vert" type="checkbox" />竖屏</label>
 			<hr />
 			<label><input id="ticky" type="checkbox" />冲程步进</label>

@@ -3,29 +3,31 @@
 
 // 外旋轮线转子引擎 Epitrochoid Rotorary Engine
 function RotorE({
-	N, // 转子顶角数
+	N, // 顶角数
 	E, // 偏心距
 	P = N == 2 ? 1.3 : 2, // 转子顶半径 / 偏心距
-	RB = 0.4,
+	RB = 0.4, // 转子缸体间隙
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
-	Evv,
+	Evb,
 }) {
 	if (N != (N |= 0) || N < 2) throw 'err N'
-	let N1 = N - 1 // 缸体顶数
-	let NE = N // 曲轴转速比
-	let NS = N1 + N1 // 缸体冲程数
+	let N1 = N - 1
+	let NB = N1 // 缸体顶数
+	let NR = N // 转子顶数
+	let NE = NR // 曲轴转速比
+	let NS = N1 + N1 // 圆周冲程数
 	let NS4 = lcm(NS, 4) // 完整循环冲程数
 	let N2 = N + N
 	tickn = ceil(tickn / N2 / N1) * N2 * N1 // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
-	E ??= Evv ? (size * 0.0872) / sqrt(P + N * 0.8 - 0.9) : (size * 0.13) / sqrt(P + N + 2.75)
+	E ??= Evb ? (size * 0.119) / sqrt(P + N * 2 - 1.5) : (size * 0.13) / sqrt(P + N + 2.75)
 	P = round(E * (P + N + 2) * 2) / 2 // 转子顶半径
 	E = round(E * 3) / 3 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
-	let GB = E * N1 // 缸体小节圆半径
-	let G = E * N // 转子大节圆半径
+	let GB = E * NB // 缸体小节圆半径
+	let G = E * NR // 转子大节圆半径
 	let Q = P - E - E // 转子腰半径
 
 	// 转子、曲轴步进角，均匀
@@ -39,8 +41,8 @@ function RotorE({
 	let TS = S => (S * PI2) / NS // 冲程起始转子角
 
 	// 曲轴心 X=0 Y=0
-	let GX = T => E * cos(T * N) // 转子心X
-	let GY = T => E * sin(T * N) // 转子心Y
+	let GX = T => E * cos(T * NE) // 转子心X
+	let GY = T => E * sin(T * NE) // 转子心Y
 	let PX = (T, n = 0, p = P) => GX(T) + p * cos(T + TN(n) + TPQ) // 转子顶X
 	let PY = (T, n = 0, p = P) => GY(T) + p * sin(T + TN(n) + TPQ) // 转子顶Y
 	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TN(n)) // 转子腰X
@@ -80,10 +82,10 @@ function RotorE({
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
 	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
-	let VN = V * N // 排量
-	let VV = V * N1 // 排量
-	let VB = area(BB) // 总体积
-	let KB = VB / V // 总体积比工作容积
+	let VN = V * N // 扫气
+	let VB = V * NB // 排量
+	let VV = area(BB) // 总体积
+	let KK = VV / V // 总体积比工作容积
 
 	// 冲程区型线
 	let SSS = sequ(0, NS - 1).map(S => {
@@ -103,7 +105,7 @@ function RotorE({
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NE, NS: NS4, E, GB, G, P, Q, RB, V, K, VN, VV, VB, KB, RBCC })
+	Object.assign(this, { size, N, NR, NS: NS4, E, GB, G, P, Q, RB, V, K, VN, VB, VV, KK, RBCC })
 	Object.assign(this, { TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
@@ -116,8 +118,8 @@ function RotorE({
 			p += _`${VS(T) / 100}{03}:${VS(T) / V}{.2}|${(1 - cos(a)) / 2}{.2}|${pis}{.2}`
 		}
 		return (
-			_`N${N}__E${E}{}__P${P}{}__K${K}{1}__` +
-			_`V${V / 100}{} ${VB / 100}{}__${VV / 100}{} ${VN / 100}{}__` +
+			_`N${N}__E${E}{}__P${P}{1}__K${K}{}__` +
+			_`V${V / 100}{} ${VV / 100}{}__${VB / 100}{} ${VN / 100}{}__` +
 			_`RB${RB}{.2} C${(RBCC / PI2) * 360}{}` +
 			p
 		)
@@ -173,11 +175,11 @@ function RotorE({
 		}
 		// 画转子全部顶
 		function $PN(T, O = G, style) {
-			for (let nr = 0; nr < N; nr++) $P(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
+			for (let nr = 0; nr < NR; nr++) $P(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画转子全部腰
 		function $QN(T, O = [0, G], style) {
-			for (let nr = 0; nr < N; nr++) $Q(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
+			for (let nr = 0; nr < NR; nr++) $Q(T, nr, O?.[nr] ?? O?.at?.(-1) ?? O, style)
 		}
 		// 画间隙密封
 		function $RB(T, style) {
