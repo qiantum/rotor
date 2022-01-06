@@ -3,7 +3,7 @@
 
 // 内旋轮线转子引擎 Hypotrochoid Rotorary Engine
 function RotorH({
-	N, // 顶角数
+	N, // 倍数、工作区数
 	E, // 偏心距
 	P = 0.8, // 缸体腰半径 / 偏心距
 	RB = 0.4, // 转子缸体间隙
@@ -15,7 +15,7 @@ function RotorH({
 	let N1 = N - 1
 	let NB = N // 缸体顶数
 	let NR = N1 // 转子顶数
-	let NE = -NR // 曲轴转速比
+	let NE = -NR // 曲轴速比
 	let NS = N1 + N1 // 圆周冲程数
 	let NS4 = lcm(NS, 4) // 完整循环冲程数
 	let N2 = N + N
@@ -112,7 +112,7 @@ function RotorH({
 
 	// 缸体腰与转子接触角、及接触步进角
 	function RBC(T, n = 0) {
-		let CT = atan(QX(n) - GB * cos(-T * N1), QY(n) - GB * sin(-T * N1)) // 两节圆交点--缸体腰点
+		let CT = atan(QX(n) - GB * cos(T * NE), QY(n) - GB * sin(T * NE)) // 两节圆交点--缸体腰点
 		return [diffabs(TN(n) + TPQ - CT), CT]
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角

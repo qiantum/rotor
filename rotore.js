@@ -3,7 +3,7 @@
 
 // 外旋轮线转子引擎 Epitrochoid Rotorary Engine
 function RotorE({
-	N, // 顶角数
+	N, // 倍数、工作区数
 	E, // 偏心距
 	P = N == 2 ? 1.3 : 2, // 转子顶半径 / 偏心距
 	RB = 0.4, // 转子缸体间隙
@@ -15,7 +15,7 @@ function RotorE({
 	let N1 = N - 1
 	let NB = N1 // 缸体顶数
 	let NR = N // 转子顶数
-	let NE = NR // 曲轴转速比
+	let NE = NR // 曲轴速比
 	let NS = N1 + N1 // 圆周冲程数
 	let NS4 = lcm(NS, 4) // 完整循环冲程数
 	let N2 = N + N
@@ -100,7 +100,7 @@ function RotorE({
 
 	// 转子顶与缸体接触角、及接触步进角
 	function RBC(T, n = 0) {
-		let CT = atan(PX(T, n) - -GB * cos(T * N), PY(T, n) - -GB * sin(T * N)) // 两节圆交点--转子顶点
+		let CT = atan(PX(T, n) + GB * cos(T * NE), PY(T, n) + GB * sin(T * NE)) // 两节圆交点--转子顶点
 		return [diffabs(T + TN(n) + TPQ - CT), CT]
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
