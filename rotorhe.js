@@ -1,8 +1,8 @@
 // Copyright: Qianyan Cai
 // License: GPL v3
 
-// 内旋轮线转子引擎 Hypotrochoid Rotorary Engine
-function RotorH({
+// 双旋轮线转子引擎 Hypo-Epitrochoid Rotorary Engine
+function RotorHE({
 	N, // 倍数、工作区数
 	E, // 偏心距
 	P = 0.8, // 缸体腰半径 / 偏心距
@@ -56,7 +56,7 @@ function RotorH({
 	let RX = (T, R, rp = RP, x = GX(T)) => (rp - E) * cos(R + T) + E * cos(R * N + T) + x
 	let RY = (T, R, rp = RP, y = GY(T)) => (rp - E) * sin(R + T) + E * sin(R * N + T) + y
 
-	// 转子型线
+	// 转子型线、即缸体腰绕转子心的外旋轮线
 	function* RR(T, Rt, RT = Tick_) {
 		for (let R of Rt?.imap(Tick_.At) ?? RT) yield [RX(T, R), RY(T, R)]
 	}

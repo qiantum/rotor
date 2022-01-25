@@ -3,7 +3,7 @@
 <html>
 	<meta charset="utf-8" />
 	<script src="./util.js"></script>
-	<script src="./rotorh.js"></script>
+	<script src="./rotorhe.js"></script>
 	<script src="./format.js"></script>
 	<script>
 		if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
@@ -69,7 +69,7 @@
 				}
 			}
 			function Rot(con) {
-				return new RotorH({ ...conf, ...con, Evb: eqvb })
+				return new RotorHE({ ...conf, ...con, Evb: eqvb })
 			}
 
 			function Draw(rot, s, canv, sss) {
@@ -174,7 +174,7 @@
 			</figure>
 		</template>
 		<nav>
-			<aside>内旋轮线<br />转子引擎</aside>
+			<aside>双旋轮线<br />转子引擎</aside>
 			<a href="?">对比</a>
 			<a href="?n=2">二角</a>
 			<a href="?n=3">三角</a>
