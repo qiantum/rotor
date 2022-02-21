@@ -83,8 +83,8 @@ function RotorE({
 	let VS = (T, n = 0, add0) => area(SS(T, n)) - (add0 ? 0 : V0) // 工作区容积
 	let V = VS(TS(1)) // 工作容积
 	let K = V / V0 + 1 // 容积比，即压缩比、膨胀比
-	let VN = V * N // 单循环排量
-	let VB = V * NB // 标称排量、曲轴单圈排量
+	let VN = V * N // 循环排量
+	let VB = V * NB // 几何排量
 	let VV = area(BB) // 总体积
 	let KK = VV / V // 总体积比工作容积
 
