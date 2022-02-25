@@ -131,6 +131,7 @@ function RotorE({
 		let $ = canvas.getContext('2d')
 		let x = midx ?? canvas.width / 2 // 曲轴心X
 		let y = midy ?? canvas.height / 2 // 曲轴心Y
+		let gw = max(GB, G) * PI / max(NB, NR, 3) / 4 // 齿宽
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
 
 		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
@@ -152,11 +153,13 @@ function RotorE({
 		}
 		// 画缸体节圆
 		function $GB(style) {
-			$$({ color: '#333', ...style }), $.arc(x, y, GB, 0, PI2), $$$()
+			$$({ color: '#333', dash: [0, gw, gw, 0], ...style })
+			$.arc(x, y, GB, 0, PI2), $$$()
 		}
 		// 画转子节圆
 		function $G(T, style) {
-			$$({ color: '#999', ...style }), $.arc(x + GX(T), y + GY(T), G, 0, PI2), $$$()
+			$$({ color: '#999', dash: [gw, gw], ...style })
+			$.arc(x + GX(T), y + GY(T), G, T, T + PI2), $$$()
 		}
 		// 画转子节圆外包
 		function $GG(T, style) {
