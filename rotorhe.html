@@ -45,10 +45,10 @@
 				}
 				let row = ceil(sqrt(ticks.length))
 				let col = ceil((ticks.length << 1) / row)
-				if (row % 2)
+				if (row % 2) // 同参数横向
 					for (let t = 0; ticks[t] || (Break(), (t = (t % row) + 1)) < row; t += row)
 						ticks[t].push(Canv(), Canv())
-				else
+				else // 同参数竖向
 					for (let t = 0; (ticks[t - col]?.length == 2 ? (t -= col) : t) < row * col; )
 						ticks[t]?.push(Canv()), ++t % col || Break()
 				Tick()
