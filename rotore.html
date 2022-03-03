@@ -13,7 +13,7 @@
 			let mode = url.searchParams
 			let body = document.body
 			let main = body.querySelector('main')
-			let eqvb = mode.get('eqvb') != null
+			let evn = mode.get('evn') != null
 			let ticky = mode.get('tick') != null
 			let tick = body.querySelector('#tick')
 
@@ -69,7 +69,7 @@
 				}
 			}
 			function Rot(con) {
-				return new RotorE({ ...conf, ...con, Evb: eqvb })
+				return new RotorE({ ...conf, ...con, evn })
 			}
 
 			function Draw(rot, s, canv, sss) {
@@ -143,10 +143,10 @@
 				if (replace) history.replaceState(null, '', url), location.reload()
 				return url
 			}
-			body.querySelector('#eqvb').checked = eqvb
-			body.querySelector('#eqvn').checked = !eqvb
-			body.querySelector('#eqvb').onchange = _ => Url(url, 'eqvb', true, null, true)
-			body.querySelector('#eqvn').onchange = _ => Url(url, 'eqvb', false, null, true)
+			body.querySelector('#evb').checked = !evn
+			body.querySelector('#evn').checked = evn
+			body.querySelector('#evb').onchange = _ => Url(url, 'evn', false, null, true)
+			body.querySelector('#evn').onchange = _ => Url(url, 'evn', true, null, true)
 			body.querySelector('#ticky').checked = ticky
 			body.querySelector('#ticky').onchange = _ => Url(url, 'tick', !ticky, null, true)
 			let vert = mode.get('vert') != null
@@ -155,7 +155,7 @@
 			body.querySelector('#vert').onchange = _ => Url(url, 'vert', !vert, null, true)
 			for (let a of body.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
-				Url(u, 'eqvb', eqvb), Url(u, 'tick', ticky), Url(u, 'vert', vert)
+				Url(u, 'evn', evn), Url(u, 'tick', ticky), Url(u, 'vert', vert)
 				a.href = u
 			}
 			console.log('msec', new Date() - time)
@@ -182,8 +182,8 @@
 			<a href="?n=5">五角</a>
 			<a href="?n=6">六角</a>
 			<a href="?n=7">七角</a>
-			<label><input id="eqvb" type="radio" />等几何排量</label>
-			<label><input id="eqvn" type="radio" />等循环排量</label>
+			<label><input id="evb" type="radio" />等几何排量</label>
+			<label><input id="evn" type="radio" />等循环排量</label>
 			<label><input id="vert" type="checkbox" />竖屏</label>
 			<hr />
 			<label><input id="ticky" type="checkbox" />冲程步进</label>

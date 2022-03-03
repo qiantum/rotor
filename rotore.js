@@ -9,7 +9,7 @@ function RotorE({
 	RB = 0.3, // 转子缸体间隙
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
-	Evb,
+	evn,
 }) {
 	if (N != (N |= 0) || N < 2) throw 'err N'
 	let N1 = N - 1
@@ -22,7 +22,7 @@ function RotorE({
 	tickn = ceil(tickn / N2 / N1) * N2 * N1 // 圆周步进数，转子顶*缸体顶*2 的整倍数
 
 	size = ceil(+size || min(size.width, size.height))
-	E ??= Evb ? (size * 0.119) / sqrt(P + N * 2 - 1.5) : (size * 0.13) / sqrt(P + N + 2.75)
+	E ??= evn ? (size * 0.13) / sqrt(P + N + 2.75) : (size * 0.119) / sqrt(P + N * 2 - 1.5)
 	P = round(E * (P + N + 2) * 2) / 2 // 转子顶半径
 	E = round(E * 3) / 3 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
