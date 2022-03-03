@@ -34,7 +34,9 @@
 			function Tick() {
 				let s = tick.value | 0
 				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
-				for (let t of ticks) Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2]))
+				for (let t of ticks)
+					Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2])),
+					Text(DrawSS(t[0], s, t[3]))
 			}
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
@@ -43,14 +45,8 @@
 						ticks.push([Rot({ N, P })])
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
-				let row = ceil(sqrt(ticks.length))
-				let col = ceil((ticks.length << 1) / row)
-				if (row % 2) // 同参数横向
-					for (let t = 0; ticks[t] || (Break(), (t = (t % row) + 1)) < row; t += row)
-						ticks[t].push(Canv(), Canv())
-				else // 同参数竖向
-					for (let t = 0; (ticks[t - col]?.length == 2 ? (t -= col) : t) < row * col; )
-						ticks[t]?.push(Canv()), ++t % col || Break()
+				for (let canv = 1; canv <= 3; Break(), canv++)
+					for (let t of ticks) t.push(Canv())
 				Tick()
 			} else if (conf.N >= 2) {
 				let rot = Rot()
@@ -61,12 +57,11 @@
 					if (sub >= rot.NS || ns & 1) Break()
 				}
 			} else {
-				for (let N of [2, 3, 4, 5]) {
-					let rot = Rot({ N })
-					for (let s of sname.keys()) Text(Draw(rot, s, Canv()))
-					Text(DrawSS(rot, Canv())), Text(DrawSS(Rot({ N, P: 0 }), Canv()))
-					Break()
-				}
+				let rots = [2, 3, 4, 5, 6].map(N => Rot({ N }))
+				for (let s = 0; s < 4; Break(), s++)
+					for (let rot of rots)
+						Text(s < 4 ? Draw(rot, s, Canv()) :
+							DrawSS(Rot({ N: rot.N, P: 0 }), null, Canv()))
 			}
 			function Rot(con) {
 				return new RotorHE({ ...conf, ...con, evn })
@@ -92,10 +87,12 @@
 				$.param(T)
 				return (canv.rot = rot), (canv.T = T), canv
 			}
-			function DrawSS(rot, canv) {
+			function DrawSS(rot, s, canv) {
+				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
 				let $ = rot.$(canv)
-				$.GG(0), $.G(0), $.param()
-				for (let s = 0; s < rot.NS; s++) $.SSS(0, s, Sstyle(s, sline, sdash), false)
+				let T = rot.TS(s ?? 0)
+				s != null && $.QQ(), $.GG(T), $.G(T), $.param()
+				for (s = 0; s < rot.NS; s++) $.SSS(T, s, Sstyle(s, sline, sdash), false)
 				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
 			}
 
