@@ -149,7 +149,7 @@ function RotorHE({
 		let g = G + E * GE
 		let gbw = roundepsi((gb * PI) / max(NB * 4, 9 - 3 * (NR - NB)))
 		let gw = roundepsi((g * PI) / max(NR * 4, 9 + 3 * (NR - NB)))
-		let gwi = (gbw - gw) / 2
+		let gwi = abs(gbw - gw) / 2
 
 		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)

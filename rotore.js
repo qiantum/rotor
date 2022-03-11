@@ -7,7 +7,7 @@ function RotorE({
 	E, // 偏心距
 	P = N == 2 ? 1.3 : 2, // 转子顶半径 / 偏心距
 	RB = 0.3, // 转子缸体间隙
-	GE = 0.5, // 节圆变位加粗曲轴
+	GE = N == 2 ? 0.5 : 0, // 节圆变位加粗曲轴
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 	evn,
@@ -137,7 +137,7 @@ function RotorE({
 		let g = G + E * GE
 		let gbw = roundepsi((gb * PI) / max(NB * 4, 9 - 3 * (NR - NB)))
 		let gw = roundepsi((g * PI) / max(NR * 4, 9 + 3 * (NR - NB)))
-		let gwi = (gbw - gw) / 2
+		let gwi = abs(gbw - gw) / 2
 
 		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
