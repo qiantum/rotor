@@ -7,6 +7,7 @@ function RotorE({
 	E, // 偏心距
 	P = N == 2 ? 1.3 : 2, // 转子顶半径 / 偏心距
 	RB = 0.3, // 转子缸体间隙
+	GE = 0.5, // 节圆变位加粗曲轴
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 	evn,
@@ -131,8 +132,12 @@ function RotorE({
 		let $ = canvas.getContext('2d')
 		let x = midx ?? canvas.width / 2 // 曲轴心X
 		let y = midy ?? canvas.height / 2 // 曲轴心Y
-		let gw = max(GB, G) * PI / max(NB, NR, 3) / 4 // 齿宽
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
+		let gb = GB + E * GE
+		let g = G + E * GE
+		let gbw = roundepsi((gb * PI) / max(NB * 4, 9 - 3 * (NR - NB)))
+		let gw = roundepsi((g * PI) / max(NR * 4, 9 + 3 * (NR - NB)))
+		let gwi = (gbw - gw) / 2
 
 		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
@@ -153,13 +158,13 @@ function RotorE({
 		}
 		// 画缸体节圆
 		function $GB(style) {
-			$$({ color: '#333', dash: [0, gw, gw, 0], ...style })
-			$.arc(x, y, GB, 0, PI2), $$$()
+			$$({ color: '#333', dash: [0, gbw, gbw - gwi, gwi], ...style })
+			$.arc(x, y, gb, 0, PI2), $$$()
 		}
 		// 画转子节圆
 		function $G(T, style) {
-			$$({ color: '#999', dash: [gw, gw], ...style })
-			$.arc(x + GX(T), y + GY(T), G, T, T + PI2), $$$()
+			$$({ color: '#999', dash: [gw - gwi, gw + gwi], ...style })
+			$.arc(x + GX(T), y + GY(T), g, T, T + PI2), $$$()
 		}
 		// 画转子节圆外包
 		function $GG(T, style) {

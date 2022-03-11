@@ -5,20 +5,21 @@
 PI2 = Math.PI2 = PI + PI
 EPSI = Number.EPSILON = 1 / (1 << 12)
 
+roundepsi = n => round(n / EPSI) * EPSI
+Number.prototype.mod = function (n) {
+	return ((this % n) + n) % n
+}
+atan = (x, y) => (Math.atan(y / x) + (x <= 0 ? PI : PI2)) % PI2 // [0,PI2)
+dist = (x, y) => Math.sqrt(x * x + y * y)
+diff = v => (((v %= PI2) + v) % PI2) - v // [-PI,PI)
+diffabs = v => abs(diff(v)) // [0,PI] ((v = abs(v) % PI2) > PI ? PI2 - v : v)
+
 function gcd(a, b) {
 	;(a |= 0), (b |= 0)
 	for (let c; b; c = a % b, a = b, b = c);
 	return a
 }
 lcm = (a, b) => ((a | 0) * (b | 0)) / gcd(a, b)
-Number.prototype.mod = function (n) {
-	return ((this % n) + n) % n
-}
-
-atan = (x, y) => (Math.atan(y / x) + (x <= 0 ? PI : PI2)) % PI2 // [0,PI2)
-dist = (x, y) => Math.sqrt(x * x + y * y)
-diff = v => (((v %= PI2) + v) % PI2) - v // [-PI,PI)
-diffabs = v => abs(diff(v)) // [0,PI] ((v = abs(v) % PI2) > PI ? PI2 - v : v)
 
 Array.prototype.at ??= function (i) {
 	return this[(i |= 0) >= 0 ? i : this.length + i]
@@ -98,7 +99,7 @@ function area(s) {
 	let a = 0
 	for (let [x, y] of s) (a += (xx - x) * (yy + y)), (xx = x), (yy = y)
 	a = (a + (xx - x0) * (yy + y0)) / 2 // 闭合
-	return round(a / EPSI) * EPSI
+	return roundepsi(a)
 }
 
 function fillhole(hole) {
