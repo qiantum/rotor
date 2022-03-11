@@ -135,8 +135,8 @@ function RotorE({
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
 		let gb = GB + E * GE
 		let g = G + E * GE
-		let gbw = roundepsi((gb * PI) / max(NB * 4, 9 - 3 * (NR - NB)))
-		let gw = roundepsi((g * PI) / max(NR * 4, 9 + 3 * (NR - NB)))
+		let gbw = (gb * PI) / max(NB * 4, 9 - 3 * (NR - NB))
+		let gw = (g * PI) / max(NR * 4, 9 + 3 * (NR - NB))
 		let gwi = abs(gbw - gw) / 2
 
 		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
@@ -168,7 +168,7 @@ function RotorE({
 		}
 		// 画转子节圆外包
 		function $GG(T, style) {
-			$$({ color: '#ccc', ...style }), $.arc(x, y, G + E, 0, PI2), $$$()
+			$$({ color: '#ccc', ...style }), $.arc(x, y, g + E, 0, PI2), $$$()
 		}
 		// 画转子顶
 		function $P(T, nr = 0, O, style) {
