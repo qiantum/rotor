@@ -34,9 +34,8 @@
 			function Tick() {
 				let s = tick.value | 0
 				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
-				for (let t of ticks)
-					Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2])),
-					Text(DrawSS(t[0], s, t[3]))
+				for (let t of ticks) Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2]))
+				for (let t of ticks) Text(DrawSS(t[0], s, t[3]))
 			}
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
@@ -45,8 +44,7 @@
 						ticks.push([Rot({ N, P })])
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
-				for (let canv = 1; canv <= 3; Break(), canv++)
-					for (let t of ticks) t.push(Canv())
+				for (let canv = 1; canv <= 3; Break(), canv++) for (let t of ticks) t.push(Canv())
 				Tick()
 			} else if (conf.N >= 2) {
 				let rot = Rot()
@@ -60,8 +58,8 @@
 				let rots = [2, 3, 4, 5, 6].map(N => Rot({ N }))
 				for (let s = 0; s < 4; Break(), s++)
 					for (let rot of rots)
-						Text(s < 4 ? Draw(rot, s, Canv()) :
-							DrawSS(Rot({ N: rot.N, P: 0 }), null, Canv()))
+						if (s < 4) Text(Draw(rot, s, Canv()))
+						else Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, Canv()))
 			}
 			function Rot(con) {
 				return new RotorHE({ ...conf, ...con, evn })
@@ -117,10 +115,10 @@
 				})
 				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
-				let tn = t * canv.rot.NR
+				let te = t * abs(canv.rot.NE)
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
-				tn = _`${floor(tn)}{}+${floor(tn * 360).mod(360)}{03}\n`
-				$[1].textContent = (canv.T != null ? t + tn : '') + (texts[1] ?? '')
+				te = _`${floor(te)}{}+${floor(te * 360).mod(360)}{03}\n`
+				$[1].textContent = (canv.T != null ? t + te : '') + (texts[1] ?? '')
 				$[2].textContent = texts[2] ?? ''
 				return canv
 			}
