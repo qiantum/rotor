@@ -115,7 +115,7 @@
 				})
 				$[0].textContent = s.join('\n')
 				let t = (canv.T ?? 0) / PI2
-				let te = t * abs(canv.rot.NE)
+				let te = t * canv.rot.NR
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				te = _`${floor(te)}{}+${floor(te * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t + te : '') + (texts[1] ?? '')
@@ -246,7 +246,6 @@
 			width: 100%;
 			height: 100%;
 			box-sizing: border-box;
-			padding: 0 0.1rem;
 			display: grid;
 			grid-template: auto / auto auto;
 			grid-auto-flow: row dense;
@@ -254,6 +253,7 @@
 		}
 		figure pre {
 			margin: 0;
+			padding: 0 0.1rem;
 			font-size: 13px;
 		}
 		figure pre:nth-child(2),
