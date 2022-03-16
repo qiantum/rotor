@@ -1,7 +1,7 @@
 // Copyright: Qianyan Cai
 // License: GPL v3
 
-;({ min, max, abs, floor, ceil, round, sqrt, PI, cos, sin, acos } = Math)
+;({ min, max, abs, floor, ceil, round, sqrt, PI, cos, sin, tan, acos } = Math)
 PI2 = Math.PI2 = PI + PI
 EPSI = Number.EPSILON = 1 / (1 << 12)
 

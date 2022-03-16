@@ -14,7 +14,6 @@
 			let body = document.body
 			let main = body.querySelector('main')
 			let ig = mode.get('ig') != null
-			let ticky = mode.get('tick') != null
 			let tick = body.querySelector('#tick')
 
 			let size = mode.get('size') ?? 320
@@ -22,40 +21,37 @@
 			let ticks = []
 
 			function Tick() {
-				let T = (ticky && tick.value) | 0
-				T = ((T <= 360 ? T : T * 3 - 360) * PI2) / 360
+				let T = tick.value | 0
+				T = (T * PI2) / 720
 				for (let t of ticks) {
 					t[2].canvas.getContext('2d').clearRect(0, 0, size, size)
 					Text(Draw(t[0], T, t[2], 0))
-					Draw(t[1], (T / t[1].Z) * t[0].Z * (ig ? 1 : -1), t[2], 1)
+					Draw(t[1], t[0].T2(T, t[1]) + (ig ? 0 : PI + t[1].TQ), t[2], 1)
 				}
 			}
 			for (let r of [3 / 1, 2 / 1, 3 / 2, 4 / 3]) {
-				for (let Z of conf.Z >= 4 ? [conf.Z] : [5, 7, 10, 13, 19])
-					for (let S of conf.Z >= 4 ? [2.5, 0, 1, 2, 4] : [2.5]) {
+				for (let Z of conf.Z >= 6 ? [conf.Z] : [6, 9, 13, 19])
+					for (let S of conf.Z >= 6 ? [2.5, 0, 1, 2, 4] : [0]) {
 						let Zr = round(Z * r)
-						let si = (size * 1.5) / (Z + Zr)
-						let g = Gear({ Z, S, size: Z * si })
-						let gr = Gear({ Z: Zr, size: Zr * si })
+						let g = Gear(Z, S, false, null, size / 2)
+						let gr = Gear(Zr, ig ? 0 : S, ig, g.zoom)
 						let canv = Canv()
-						canv.E = gr.R + g.R * (ig ? -1 : 1)
-						canv.Esize = gr.Rsize + g.Rsize * (ig ? -1 : 1)
+						canv.E = g.E(gr)
 						ticks.push([g, gr, canv])
 					}
 				Break()
 			}
-			if (ticky) (tick.oninput = Tick), (tick.disabled = false), tick.focus()
 			Tick()
-			function Gear(con) {
-				return new GearI({ ...conf, ...con })
+			function Gear(Z, S, I, zoom, size) {
+				return new GearI({ ...conf, Z, S, I, zoom, size })
 			}
 
 			function Draw(gear, T, canv, n) {
-				let x = ig ? !n * canv.Esize : (canv.Esize - gear.Rsize) * (n ? 1 : -1)
-				canv.midx = canv.canvas.width / 2 + x
+				canv.midx =
+					canv.canvas.width * (ig ? 0.75 : 0.5) + gear.P * gear.zoom * (!ig && n ? 1 : -1)
 				canv.param = canv.text[n ? 3 : 2]
 				let $ = gear.$(canv)
-				$.O(), $.R(), $.B(), $.CZ(T)
+				$.O(), $.B(), $.P(), $.CZ(T)
 				$.param(T)
 				return (canv.gear = gear), (canv.T = T), canv
 			}
@@ -91,12 +87,11 @@
 			body.querySelector('#ig').checked = ig
 			body.querySelector('#eg').onchange = _ => Url(url, 'ig', false, null, true)
 			body.querySelector('#ig').onchange = _ => Url(url, 'ig', true, null, true)
-			body.querySelector('#ticky').checked = ticky
-			body.querySelector('#ticky').onchange = _ => Url(url, 'tick', !ticky, null, true)
 			let vert = mode.get('vert') != null
 			vert ? body.classList.add('vert') : body.classList.remove('vert')
 			body.querySelector('#vert').checked = vert
 			body.querySelector('#vert').onchange = _ => Url(url, 'vert', !vert, null, true)
+			;(tick.oninput = Tick), tick.focus()
 			for (let a of body.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
 				Url(u, 'ig', ig), Url(u, 'tick', ticky), Url(u, 'vert', vert)
@@ -120,17 +115,15 @@
 		<nav>
 			<aside>齿轮<br />啮合</aside>
 			<a href="?">对比</a>
-			<a href="?z=5">5</a>
-			<a href="?z=7">7</a>
-			<a href="?z=10">10</a>
+			<a href="?z=6">6</a>
+			<a href="?z=9">9</a>
 			<a href="?z=13">13</a>
 			<a href="?z=19">19</a>
 			<label><input id="eg" type="radio" />外啮合</label>
 			<label><input id="ig" type="radio" />内啮合</label>
 			<label><input id="vert" type="checkbox" />竖屏</label>
 			<hr />
-			<label><input id="ticky" type="checkbox" />啮合步进</label>
-			<input id="tick" type="range" value="0" max="720" disabled />
+			<label>啮合步进</label><input id="tick" type="range" value="0" max="720" />
 		</nav>
 		<main>
 			<summary>
@@ -138,7 +131,7 @@
 				<pre>
 <!--			--->M 模数 A 压力角
 <!--			--->Z 齿数 S 变位系数
-<!--			--->B 基圆半径 R 分度圆半径 U 顶圆半径 F 根圆半径
+<!--			--->B 基圆半径 P 分度圆半径 U 顶圆半径 F 根圆半径
 <!--		---></pre>
 				版权所有 <a href="http://qiantum.com">蔡倩彦</a> | 开源许可 GPLv3
 			</summary>
@@ -184,7 +177,6 @@
 			width: 100%;
 			height: 100%;
 			box-sizing: border-box;
-			padding: 0 0.1rem;
 			display: grid;
 			grid-template: auto / auto auto;
 			grid-auto-flow: row dense;
@@ -192,7 +184,9 @@
 		}
 		figure pre {
 			margin: 0;
+			padding: 0.1rem;
 			font-size: 13px;
+			background: #f6f6f6e6;
 		}
 		figure pre:nth-child(2),
 		figure pre:nth-child(4) {
