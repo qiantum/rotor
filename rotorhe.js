@@ -140,11 +140,11 @@ function RotorHE({
 	}
 	console.log(...params().split('__'), _`Vmin${V0 / 100}{.1} tn${tickn}`)
 
-	this.$ = ({ canvas, midx, midy, param }) => {
-		let $ = canvas.getContext('2d')
-		let x = midx ?? canvas.width / 2 // 曲轴心X
-		let y = midy ?? canvas.height / 2 // 曲轴心Y
+	this.$ = ({ canvas, x, y, param }) => {
+		x ??= canvas.width / 2 // 曲轴心X
+		y ??= canvas.height / 2 // 曲轴心Y
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
+		let $ = canvas.getContext('2d')
 		let gb = GB + E * GE
 		let g = G + E * GE
 		let gbw = (gb * PI) / max(NB * 4, 9 - 3 * (NR - NB))
