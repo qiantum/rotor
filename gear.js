@@ -20,12 +20,13 @@ function GearInv({
 	let TP = PI2 / Z // 齿距角
 	let TQ = PI / Z // 齿顶根角
 	let TB = (PI + 4 * S * tan(AA)) / Z + GearInv.AT(AA) * 2 // 基角（依据基点，齿厚角+两侧分度展角）
+	TB < EPSI && (TB = EPSI)
 
 	let P = M * Z * 0.5 // 分度圆半径
 	let B = P * cos(AA) // 基圆半径
 	let U = P + M * (S + (I ? 1.25 : 1)) // 齿顶半径
 	let F = P + M * (S - (I ? 1 : 1.25)) // 齿根半径
-	if (I && F < B) F = B
+	I ? F < B && (F = B) : F < M && (F = M)
 	// let Q = P + M * S // 中分圆半径
 	// U = Q + M * (I ? 1.25 : 1) // 齿顶半径
 	// F = Q - M * (I ? 1 : 1.25) // 齿根半径
@@ -38,8 +39,8 @@ function GearInv({
 		if (u < U) F -= U - (U = u)
 	}
 	let CU = GearInv.RC(U, B) // 齿顶渐开角
-	let CF = GearInv.RC(max(F, B), B) // 齿根渐开角
-	let Ct = ((CU - CF) * Z * 2) / tickn // 步进渐开角
+	let CF = GearInv.RC(F, B) // 齿根渐开角
+	let Ct = max(((CU - CF) * Z * 2) / tickn, EPSI) // 步进渐开角
 	let CX = (T, C) => B * cos(T + C) + B * C * sin(T + C) // 齿廓点X
 	let CY = (T, C) => B * sin(T + C) - B * C * cos(T + C) // 齿廓点Y
 	let TZ = z => (z * PI2) / Z - TB / 2 + T0 + (T0 < 0 ? TQ : 0) // 齿起始角（依据基点）
@@ -84,10 +85,10 @@ function GearInv({
 			$$({ color: '#ccc', ...style })
 			$.arc(x, y, B * zoom, 0, PI2), $$$()
 		}
-		// 画根圆
-		function $F(style) {
+		// 画节圆
+		function $G(G, style) {
 			$$({ color: '#999', dash: [1, 3], ...style })
-			$.arc(x, y, F * zoom, 0, PI2), $$$()
+			$.arc(x, y, G * zoom, 0, PI2), $$$()
 		}
 		// 画齿
 		function $C(T, z = 0, style, f = true) {
@@ -110,11 +111,11 @@ function GearInv({
 		function $CZ(T, style) {
 			for (let z = 0; z < Z; z++) $C(T, z, style)
 		}
-		return Object.assign({ param: $param, x, y, O: $O, B: $B, F: $F, C: $C, CZ: $CZ })
+		return Object.assign({ param: $param, x, y, O: $O, B: $B, G: $G, C: $C, CZ: $CZ })
 	}
 }
 GearInv.AT = A => tan(A) - A // 压力角求展角（展角+压力角=渐开角）
-GearInv.RC = (R, B) => sqrt(R * R - B * B) / B // 半径求渐开角
+GearInv.RC = (R, B) => sqrt(max(R * R - B * B, 0)) / B // 半径求渐开角
 GearInv.RT = (R, B) => GearInv.AT(acos(B / R)) // 半径求展角
 
 GearInv.EEmin = (A, ZZ) => (cos((A * PI) / 180) - 1) * ZZ * 0.5 // 最小变距系数

@@ -13,12 +13,12 @@
 			let mode = url.searchParams
 			let body = document.body
 			let main = body.querySelector('main')
-			let ig = mode.get('ig') != null
+			let I = mode.get('ig') != null
 			let tick = body.querySelector('#tick')
 
 			let r = +mode.get('r') || 0
 			let size = +mode.get('size') || 320
-			let conf = { M: 4, A: 20 }
+			let conf = { M: +mode.get('m') || 4, A: +mode.get('a') || 20 }
 			let ticks = []
 
 			function Tick() {
@@ -35,12 +35,14 @@
 				for (let R of r >= 1 ? [r] : [3, 2, 3 / 2, 4 / 3, 1])
 					for (let EE of r >= 1 ? [0, -1, -2, 1, 2] : [0]) {
 						let Z2 = round(Z * R)
-						let ZZ = ig ? Z2 - Z : Z2 + Z
+						let ZZ = I ? Z2 - Z : Z2 + Z
 						EE = max(EE, GearInv.EEmin(conf.A, ZZ))
-						let SS = GearInv.EESS(conf.A, ZZ, EE)
 						let E = GearInv.E(conf.M, ZZ, EE)
-						let g = new GearInv({ ...conf, Z })
-						let g2 = new GearInv({ ...conf, Z: Z2, S: SS, I: ig, T0: !ig ? -PI : 0 })
+						let SS = GearInv.EESS(conf.A, ZZ, EE)
+						let S2 = SS < 0 == I ? SS / 4 : SS + max(0, SS / 4)
+						let S = I ? S2 - SS : SS - S2
+						let g = new GearInv({ ...conf, Z, S })
+						let g2 = new GearInv({ ...conf, Z: Z2, S: S2, I, T0: !I ? -PI : 0 })
 						;(g.G = g.G2(E, g2)), (g2.G = g2.G2(E, g))
 						let canv = Canv({ EE, E, zoom: size / (g.B * 4 + g.M * 6) })
 						ticks.push({ g, g2, canv })
@@ -51,10 +53,10 @@
 
 			function Draw(g, T, canv, n) {
 				n ? (canv.T2 = T) : (canv.T = T)
-				canv.x = canv.canvas.width * (ig ? 0.75 : 0.5) + canv.zoom * (!ig && n ? g.G : -g.G)
+				canv.x = canv.canvas.width * (I ? 0.75 : 0.5) + canv.zoom * (!I && n ? g.G : -g.G)
 				canv.param = canv.text[n ? 3 : 2]
 				let $ = g.$(canv)
-				$.O(T), $.B(), $.F(), $.CZ(T)
+				$.O(T), $.B(), $.G(g.G), $.CZ(T)
 				$.param(T)
 			}
 			function Canv(con) {
@@ -87,8 +89,8 @@
 				if (replace) history.replaceState(null, '', url), location.reload()
 				return url
 			}
-			body.querySelector('#eg').checked = !ig
-			body.querySelector('#ig').checked = ig
+			body.querySelector('#eg').checked = !I
+			body.querySelector('#ig').checked = I
 			body.querySelector('#eg').onchange = _ => Url(url, 'ig', false, null, true)
 			body.querySelector('#ig').onchange = _ => Url(url, 'ig', true, null, true)
 			let vert = mode.get('vert') != null
@@ -98,7 +100,7 @@
 			;(tick.oninput = Tick), tick.focus()
 			for (let a of body.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
-				Url(u, 'ig', ig), Url(u, 'vert', vert)
+				Url(u, 'ig', I), Url(u, 'vert', vert)
 				a.href = u
 			}
 			console.log('msec', new Date() - time)
