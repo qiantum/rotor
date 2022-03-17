@@ -19,7 +19,7 @@ function GearInv({
 	let AA = (A * PI) / 180 // 压力角
 	let TP = PI2 / Z // 齿距角
 	let TQ = PI / Z // 齿顶根角
-	let TB = (PI + 4 * S * tan(AA)) / Z + GearInv.T(AA) * 2 // 基角（依据基点，齿厚角+两侧分度展角）
+	let TB = (PI + 4 * S * tan(AA)) / Z + GearInv.AT(AA) * 2 // 基角（依据基点，齿厚角+两侧分度展角）
 
 	let P = M * Z * 0.5 // 分度圆半径
 	let B = P * cos(AA) // 基圆半径
@@ -32,9 +32,14 @@ function GearInv({
 	// let CQ = sqrt(Q * Q - B * B) / B // 中分渐开角
 	// TB = TQ + (CQ - acos(B / Q)) * 2 // 基角（依据基点，中分齿厚角+两侧中分展角）
 
-	let CU = sqrt(U * U - B * B) / B // 齿顶渐开角
-	let CF = sqrt(max(F * F - B * B, 0)) / B // 齿根渐开角
-	let CC = ((CU - CF) * Z * 2) / tickn // 步进渐开角
+	if (S > 0) {
+		let u = U // 齿廓交叉修正
+		for (; GearInv.RT(u, B) > TB / 2; u -= M / 32);
+		if (u < U) F -= U - (U = u)
+	}
+	let CU = GearInv.RC(U, B) // 齿顶渐开角
+	let CF = GearInv.RC(max(F, B), B) // 齿根渐开角
+	let Ct = ((CU - CF) * Z * 2) / tickn // 步进渐开角
 	let CX = (T, C) => B * cos(T + C) + B * C * sin(T + C) // 齿廓点X
 	let CY = (T, C) => B * sin(T + C) - B * C * cos(T + C) // 齿廓点Y
 	let TZ = z => (z * PI2) / Z - TB / 2 + T0 + (T0 < 0 ? TQ : 0) // 齿起始角（依据基点）
@@ -89,9 +94,9 @@ function GearInv({
 			$$({ color: '#000', ...style })
 			let to
 			T += TZ(z)
-			for (let C = CF; C <= CU + EPSI; C += CC)
+			for (let C = CF; C <= CU + EPSI; C += Ct)
 				(to = to ? $.lineTo : $.moveTo).call($, x + CX(T, C) * zoom, y + CY(T, C) * zoom)
-			for (let C = CU; C >= CF - EPSI; C -= CC)
+			for (let C = CU; C >= CF - EPSI; C -= Ct)
 				$.lineTo(x + CX(T + TB, -C) * zoom, y + CY(T + TB, -C) * zoom)
 			if (f) {
 				if (F < B)
@@ -108,7 +113,9 @@ function GearInv({
 		return Object.assign({ param: $param, x, y, O: $O, B: $B, F: $F, C: $C, CZ: $CZ })
 	}
 }
-GearInv.T = A => tan(A) - A // 压力角求展角（展角+压力角=渐开角）
+GearInv.AT = A => tan(A) - A // 压力角求展角（展角+压力角=渐开角）
+GearInv.RC = (R, B) => sqrt(R * R - B * B) / B // 半径求渐开角
+GearInv.RT = (R, B) => GearInv.AT(acos(B / R)) // 半径求展角
 
 GearInv.EEmin = (A, ZZ) => (cos((A * PI) / 180) - 1) * ZZ * 0.5 // 最小变距系数
 GearInv.E = (M, ZZ, EE) => M * (ZZ * 0.5 + EE) // 变距系数 求 中心距
@@ -117,5 +124,5 @@ GearInv.EESS = function (A, ZZ, EE) {
 	A = (A * PI) / 180
 	ZZ *= 0.5
 	let AW = acos(cos(A) / (EE / ZZ + 1))
-	return ((GearInv.T(AW) - GearInv.T(A)) / tan(A)) * ZZ
+	return ((GearInv.AT(AW) - GearInv.AT(A)) / tan(A)) * ZZ
 }
