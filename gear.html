@@ -16,62 +16,69 @@
 			let ig = mode.get('ig') != null
 			let tick = body.querySelector('#tick')
 
-			let size = mode.get('size') ?? 320
-			let conf = { M: 4, A: 20, Z: mode.get('z') | 0 }
+			let r = +mode.get('r') || 0
+			let size = +mode.get('size') || 320
+			let conf = { M: 4, A: 20 }
 			let ticks = []
 
 			function Tick() {
 				let T = tick.value | 0
 				T = (T * PI2) / 720
 				for (let t of ticks) {
-					t[2].canvas.getContext('2d').clearRect(0, 0, size, size)
-					Text(Draw(t[0], T, t[2], 0))
-					Draw(t[1], t[0].T2(T, t[1]) + (ig ? 0 : PI + t[1].TQ), t[2], 1)
+					t.canv.canvas.getContext('2d').clearRect(0, 0, size, size)
+					Draw(t.g, T, t.canv, 0)
+					Draw(t.g2, t.g.T2(T, t.g2), t.canv, 1)
+					Text(t.canv)
 				}
 			}
-			for (let r of [3 / 1, 2 / 1, 3 / 2, 4 / 3]) {
-				for (let Z of conf.Z >= 6 ? [conf.Z] : [6, 9, 13, 19])
-					for (let S of conf.Z >= 6 ? [2.5, 0, 1, 2, 4] : [0]) {
-						let Zr = round(Z * r)
-						let g = Gear(Z, S, false, null, size / 2)
-						let gr = Gear(Zr, ig ? 0 : S, ig, g.zoom)
-						let canv = Canv()
-						canv.E = g.E(gr)
-						ticks.push([g, gr, canv])
+			for (let Z of [19, 13, 9, 6]) {
+				for (let R of r >= 1 ? [r] : [3, 2, 3 / 2, 4 / 3, 1])
+					for (let EE of r >= 1 ? [-1, 0, -2, 1, 2] : [-1]) {
+						let Z2 = round(Z * R)
+						let ZZ = ig ? Z2 - Z : Z2 + Z
+						EE = max(EE, GearInv.EEmin(conf.A, ZZ))
+						let SS = GearInv.EESS(conf.A, ZZ, EE)
+						let E = GearInv.E(conf.M, ZZ, EE)
+						let g = Gear(Z, 0, false, null, size / 2)
+						let g2 = Gear(Z2, SS, ig, g.zoom)
+						;(g.G = g.G2(E, g2)), (g2.G = g2.G2(E, g))
+						ticks.push({ g, g2, canv: Canv(EE, E) })
 					}
 				Break()
 			}
 			Tick()
+
 			function Gear(Z, S, I, zoom, size) {
-				return new GearI({ ...conf, Z, S, I, zoom, size })
+				return new GearInv({ ...conf, Z, S, I, zoom, size })
 			}
-
-			function Draw(gear, T, canv, n) {
-				canv.midx =
-					canv.canvas.width * (ig ? 0.75 : 0.5) + gear.P * gear.zoom * (!ig && n ? 1 : -1)
+			function Draw(g, T, canv, n) {
+				n ? (canv.T2 = T) : (canv.T = T)
+				canv.midx = canv.canvas.width * (ig ? 0.75 : 0.5) + g.G * g.zoom * (!ig && n ? 1 : -1)
 				canv.param = canv.text[n ? 3 : 2]
-				let $ = gear.$(canv)
-				$.O(), $.B(), $.P(), $.CZ(T)
+				n && !ig && (T += PI + g.TQ)
+				let $ = g.$(canv)
+				$.O(), $.B(), $.F(), $.CZ(T)
 				$.param(T)
-				return (canv.gear = gear), (canv.T = T), canv
 			}
-
-			function Canv() {
+			function Canv(EE, E) {
 				let $ = body.querySelector('template').content.cloneNode(true)
 				let canvas = $.querySelector('canvas')
 				canvas.width = canvas.height = size
 				let text = $.querySelectorAll('pre')
 				main.insertBefore($, main.lastElementChild)
-				return { canvas, text }
+				return { canvas, text, EE, E }
 			}
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
 			function Text(canv, ...texts) {
 				let $ = canv.text
-				$[0].textContent = _`E${canv.E}{1}`
-				let t = (canv.T ?? 0) / PI2
-				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
+				$[0].textContent = _`EE${canv.EE}{2} E${canv.E}{.1}`
+				let t = canv.T / PI2
+				let t2 = abs(canv.T2) / PI2
+				t =
+					_`${floor(t)}{}+${floor(t * 360).mod(360)}{03} ` +
+					_`${floor(t2)}{}+${floor(t2 * 360).mod(360)}{03}\n`
 				$[1].textContent = (canv.T != null ? t : '') + (texts[1] ?? '')
 				return canv
 			}
@@ -94,7 +101,7 @@
 			;(tick.oninput = Tick), tick.focus()
 			for (let a of body.querySelectorAll('nav a')) {
 				let u = new URL(a.href)
-				Url(u, 'ig', ig), Url(u, 'tick', ticky), Url(u, 'vert', vert)
+				Url(u, 'ig', ig), Url(u, 'vert', vert)
 				a.href = u
 			}
 			console.log('msec', new Date() - time)
@@ -115,10 +122,11 @@
 		<nav>
 			<aside>齿轮<br />啮合</aside>
 			<a href="?">对比</a>
-			<a href="?z=6">6</a>
-			<a href="?z=9">9</a>
-			<a href="?z=13">13</a>
-			<a href="?z=19">19</a>
+			<a href="?r=3">3:1</a>
+			<a href="?r=2">2:1</a>
+			<a href="?r=1.5">3:2</a>
+			<a href="?r=1.3333">4:3</a>
+			<a href="?r=1">1:1</a>
 			<label><input id="eg" type="radio" />外啮合</label>
 			<label><input id="ig" type="radio" />内啮合</label>
 			<label><input id="vert" type="checkbox" />竖屏</label>
