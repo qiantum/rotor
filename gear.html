@@ -31,16 +31,17 @@
 					Text(t.canv)
 				}
 			}
-			for (let Z of [19, 13, 9, 6]) {
+			for (let Z of [21, 15, 10, 6]) {
 				for (let R of r >= 1 ? [r] : [3, 2, 3 / 2, 4 / 3, 1])
-					for (let EE of r >= 1 ? [0, -1, -2, 1, 2] : [0]) {
+					for (let EE of r >= 1 ? [0, -1.5, 1, 2] : [0]) {
+						if (ig && R <= 1) R = 1.1
 						let Z2 = round(Z * R)
 						let ZZ = I ? Z2 - Z : Z2 + Z
 						EE = max(EE, GearInv.EEmin(conf.A, ZZ))
 						let E = GearInv.E(conf.M, ZZ, EE)
 						let SS = GearInv.EESS(conf.A, ZZ, EE)
-						let S2 = SS < 0 == I ? SS / 4 : SS + max(0, SS / 4)
-						let S = I ? S2 - SS : SS - S2
+						let S = SS * (!ig ? (SS >= 0 ? 0.75 : 0) : SS >= 0 ? 0.25 : -2)
+						let S2 = !ig ? SS - S : SS + S
 						let g = new GearInv({ ...conf, Z, S })
 						let g2 = new GearInv({ ...conf, Z: Z2, S: S2, I, T0: !I ? -PI : 0 })
 						;(g.G = g.G2(E, g2)), (g2.G = g2.G2(E, g))

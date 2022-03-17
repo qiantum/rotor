@@ -11,7 +11,7 @@ function GearInv({
 	T0 = 0, // 啮合起始角 >=0 从齿顶起始 <0 从齿根起始
 	tickn = 240, // 齿廓总步进数
 }) {
-	if ((M = round(M * 8) >> 3) <= 0) throw 'err M'
+	if (!((M = roundepsi(M)) > 0)) throw 'err M'
 	if (!((A = roundepsi(A)) > 0)) throw 'err A'
 	if (Z != (Z |= 0) || Z < 6) throw 'err Z'
 	tickn = max(ceil(tickn / Z / 2), 3) * Z * 2 // 齿廓步进数，齿数整倍数
@@ -55,7 +55,7 @@ function GearInv({
 	function params(T) {
 		return _`M${M} A${A}__Z${Z} S${S}{2}__B${B}{.1} P${P}{.1}__F${F}{.1} U${U}{.1}__`
 	}
-	console.log(...params().split('__'), _`${TB}{5} tn${tickn}`, F < B ? 'F<B' : '')
+	console.log(...params().split('__'), _`${TB}{5} tn${tickn}`, F < B ? 'F<B' : ' ')
 
 	this.$ = ({ canvas, x, y, zoom = 1, param }) => {
 		x ??= canvas.width / 2 // 齿心X
@@ -122,6 +122,7 @@ GearInv.EEmin = (A, ZZ) => (cos((A * PI) / 180) - 1) * ZZ * 0.5 // 最小变距�
 GearInv.E = (M, ZZ, EE) => M * (ZZ * 0.5 + EE) // 变距系数 求 中心距
 // 变距系数 求 变位系数和差
 GearInv.EESS = function (A, ZZ, EE) {
+	if (ZZ <= 0) return 0
 	A = (A * PI) / 180
 	ZZ *= 0.5
 	let AW = acos(cos(A) / (EE / ZZ + 1))
