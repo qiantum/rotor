@@ -117,16 +117,16 @@ function RotorE({
 			p = _`|${(RBC(T)[0] / PI2) * 360}{02}__`
 			let a = (T / TS(1)) * PI
 			let pis = (3 + 1 - sqrt(3 * 3 - sin(a) * sin(a)) - cos(a)) / 2
-			p += _`${VS(T) / 100}{03}:${VS(T) / V}{.2}|${(1 - cos(a)) / 2}{.2}|${pis}{.2}`
+			p += _`${VS(T) / 100}{03}:${VS(T) / V}{2}|${(1 - cos(a)) / 2}{2}|${pis}{2}`
 		}
 		return (
-			_`N${N}__E${E}{}__P${P}{}__K${K}{1}__` +
+			_`N${N}__E${E}{}__P${P}{}__K${K}{.1}__` +
 			_`V${V / 100}{} ${VV / 100}{}__${VB / 100}{} ${VN / 100}{}__` +
-			_`RB${RB}{.2} C${(RBCC / PI2) * 360}{}` +
+			_`RB${RB}{2} C${(RBCC / PI2) * 360}{}` +
 			p
 		)
 	}
-	console.log(...params().split('__'), _`Vmin${V0 / 100}{1} tn${tickn}`)
+	console.log(...params().split('__'), _`Vmin${V0 / 100}{.1} tn${tickn}`)
 
 	this.$ = ({ canvas, midx, midy, param }) => {
 		let $ = canvas.getContext('2d')

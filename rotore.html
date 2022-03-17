@@ -27,7 +27,7 @@
 			let sdash = [[2, 6]]
 			sdash.push([0, 2, 2, 4]), sdash.push([0, 4, 2, 2]), sdash.push([0, 6, 2, 0])
 			let sdual = mode.get('.2') != null
-			let size = mode.get('size') ?? 320
+			let size = +mode.get('size') || 320
 			let conf = { N: mode.get('n') | 0, size }
 			let ticks = []
 
