@@ -33,40 +33,37 @@
 			}
 			for (let Z of [19, 13, 9, 6]) {
 				for (let R of r >= 1 ? [r] : [3, 2, 3 / 2, 4 / 3, 1])
-					for (let EE of r >= 1 ? [-1, 0, -2, 1, 2] : [-1]) {
+					for (let EE of r >= 1 ? [0, -1, -2, 1, 2] : [0]) {
 						let Z2 = round(Z * R)
 						let ZZ = ig ? Z2 - Z : Z2 + Z
 						EE = max(EE, GearInv.EEmin(conf.A, ZZ))
 						let SS = GearInv.EESS(conf.A, ZZ, EE)
 						let E = GearInv.E(conf.M, ZZ, EE)
-						let g = Gear(Z, 0, false, null, size / 2)
-						let g2 = Gear(Z2, SS, ig, g.zoom)
+						let g = new GearInv({ ...conf, Z })
+						let g2 = new GearInv({ ...conf, Z: Z2, S: SS, I: ig, T0: !ig ? -PI : 0 })
 						;(g.G = g.G2(E, g2)), (g2.G = g2.G2(E, g))
-						ticks.push({ g, g2, canv: Canv(EE, E) })
+						let canv = Canv({ EE, E, zoom: size / (g.B * 4 + g.M * 6) })
+						ticks.push({ g, g2, canv })
 					}
 				Break()
 			}
 			Tick()
 
-			function Gear(Z, S, I, zoom, size) {
-				return new GearInv({ ...conf, Z, S, I, zoom, size })
-			}
 			function Draw(g, T, canv, n) {
 				n ? (canv.T2 = T) : (canv.T = T)
-				canv.midx = canv.canvas.width * (ig ? 0.75 : 0.5) + g.G * g.zoom * (!ig && n ? 1 : -1)
+				canv.x = canv.canvas.width * (ig ? 0.75 : 0.5) + canv.zoom * (!ig && n ? g.G : -g.G)
 				canv.param = canv.text[n ? 3 : 2]
-				n && !ig && (T += PI + g.TQ)
 				let $ = g.$(canv)
-				$.O(), $.B(), $.F(), $.CZ(T)
+				$.O(T), $.B(), $.F(), $.CZ(T)
 				$.param(T)
 			}
-			function Canv(EE, E) {
+			function Canv(con) {
 				let $ = body.querySelector('template').content.cloneNode(true)
 				let canvas = $.querySelector('canvas')
 				canvas.width = canvas.height = size
 				let text = $.querySelectorAll('pre')
 				main.insertBefore($, main.lastElementChild)
-				return { canvas, text, EE, E }
+				return { canvas, text, ...con }
 			}
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
@@ -120,7 +117,7 @@
 			</figure>
 		</template>
 		<nav>
-			<aside>齿轮<br />啮合</aside>
+			<aside>渐开线齿轮<br />啮合</aside>
 			<a href="?">对比</a>
 			<a href="?r=3">3:1</a>
 			<a href="?r=2">2:1</a>
@@ -233,7 +230,9 @@
 		}
 		aside {
 			position: absolute;
-			left: 2rem;
+			left: 0;
+			width: 8rem;
+			text-align: center;
 		}
 		hr {
 			all: unset;

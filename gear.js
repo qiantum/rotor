@@ -8,9 +8,8 @@ function GearInv({
 	Z, // 齿数
 	S = 0, // 变位系数
 	I = false, // 内齿轮
+	T0 = 0, // 啮合起始角 >=0 从齿顶起始 <0 从齿根起始
 	tickn = 240, // 齿廓总步进数
-	zoom, // 像素比例
-	size, // 预估像素
 }) {
 	if ((M = round(M * 8) >> 3) <= 0) throw 'err M'
 	if (!((A = roundepsi(A)) > 0)) throw 'err A'
@@ -38,14 +37,12 @@ function GearInv({
 	let CC = ((CU - CF) * Z * 2) / tickn // 步进渐开角
 	let CX = (T, C) => B * cos(T + C) + B * C * sin(T + C) // 齿廓点X
 	let CY = (T, C) => B * sin(T + C) - B * C * cos(T + C) // 齿廓点Y
-	let TZ = z => (z * PI2) / Z - TB / 2 // 齿起始角（依据基点）
+	let TZ = z => (z * PI2) / Z - TB / 2 + T0 + (T0 < 0 ? TQ : 0) // 齿起始角（依据基点）
 
 	let T2 = (T, gear2) => (T / gear2.Z) * Z * (I == gear2.I ? -1 : 1)
 	let G2 = (E, gear2) => (E * Z) / max(abs(Z + gear2.Z * (I == gear2.I ? 1 : -1)), 1)
 
-	zoom ??= ceil(+size || min(size.width, size.height)) / (B * 2 + M * 3)
-	size = ceil(U * zoom * 2)
-	Object.assign(this, { zoom, size, M, A, Z, S, I, B, P, U, F })
+	Object.assign(this, { M, A, Z, S, I, B, P, U, F })
 	Object.assign(this, { TP, TQ, TZ, T2, G2 })
 
 	// 参数显示
@@ -54,11 +51,11 @@ function GearInv({
 	}
 	console.log(...params().split('__'), _`${TB}{5} tn${tickn}`, F < B ? 'F<B' : '')
 
-	this.$ = ({ canvas, midx, midy, param }) => {
-		let $ = canvas.getContext('2d')
-		let x = midx ?? canvas.width / 2 // 齿心X
-		let y = midy ?? canvas.height / 2 // 齿心Y
+	this.$ = ({ canvas, x, y, zoom = 1, param }) => {
+		x ??= canvas.width / 2 // 齿心X
+		y ??= canvas.height / 2 // 齿心Y
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
+		let $ = canvas.getContext('2d')
 
 		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
@@ -73,9 +70,9 @@ function GearInv({
 			$.setLineDash([])
 		}
 		// 画齿心
-		function $O(style) {
+		function $O(T, O = M * 0.75 * zoom, style) {
 			$$({ color: '#ccc', ...style })
-			$.arc(x, y, 1, 0, PI2), $$$()
+			$.moveTo(x, y), $.arc(x, y, O, T + T0, T + T0 + PI2), $$$()
 		}
 		// 画基圆
 		function $B(style) {
@@ -83,7 +80,7 @@ function GearInv({
 			$.arc(x, y, B * zoom, 0, PI2), $$$()
 		}
 		// 画根圆
-		function $F(G, style) {
+		function $F(style) {
 			$$({ color: '#999', dash: [1, 3], ...style })
 			$.arc(x, y, F * zoom, 0, PI2), $$$()
 		}
@@ -113,12 +110,12 @@ function GearInv({
 }
 GearInv.T = A => tan(A) - A // 压力角求展角（展角+压力角=渐开角）
 
-GearInv.EEmin = (A, ZZ) => ((cos((A * PI) / 180) - 1) * ZZ) / 2 // 最小变距系数
-GearInv.E = (M, ZZ, EE) => M * (ZZ / 2 + EE) // 变距系数 求 中心距
+GearInv.EEmin = (A, ZZ) => (cos((A * PI) / 180) - 1) * ZZ * 0.5 // 最小变距系数
+GearInv.E = (M, ZZ, EE) => M * (ZZ * 0.5 + EE) // 变距系数 求 中心距
 // 变距系数 求 变位系数和差
 GearInv.EESS = function (A, ZZ, EE) {
 	A = (A * PI) / 180
-	ZZ /= 2
+	ZZ *= 0.5
 	let AW = acos(cos(A) / (EE / ZZ + 1))
 	return ((GearInv.T(AW) - GearInv.T(A)) / tan(A)) * ZZ
 }
