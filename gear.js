@@ -36,10 +36,13 @@ function GearInv({
 
 	let fixU = 0
 	if (S > 0) {
-		let u = U // 齿廓交叉修正
+		let u = U // 齿顶交叉修正
 		for (; GearInv.RT(u, B) > TB / 2; u -= M / 32);
 		fixU = u - U
 		if (fixU) (U = u), (F += fixU), (fixF += fixU)
+		let f = max(F, B) // 齿根交叉修正
+		for (; GearInv.RT(f, B) < (TB - TP) / 2; f += M / 32);
+		if (f != F && f != B) (fixF += f - F), (F = f)
 	}
 	let CU = GearInv.RC(U, B) // 齿顶渐开角
 	let CF = GearInv.RC(F, B) // 齿根渐开角
