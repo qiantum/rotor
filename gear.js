@@ -118,8 +118,10 @@ GearInv.AT = A => tan(A) - A // 压力角求展角（展角+压力角=渐开角�
 GearInv.RC = (R, B) => sqrt(max(R * R - B * B, 0)) / B // 半径求渐开角
 GearInv.RT = (R, B) => GearInv.AT(acos(B / R)) // 半径求展角
 
-GearInv.EEmin = (A, ZZ) => (cos((A * PI) / 180) - 1) * ZZ * 0.5 // 最小变距系数
+GearInv.M = (ZZ, E, EE) => E / (ZZ * 0.5 + EE) // 中心距 求 模数
 GearInv.E = (M, ZZ, EE) => M * (ZZ * 0.5 + EE) // 变距系数 求 中心距
+GearInv.EE = (M, ZZ, E) => E / M - ZZ * 0.5 // 中心距 求 变距系数
+GearInv.EEmin = (A, ZZ) => (cos((A * PI) / 180) - 1) * ZZ * 0.5 // 最小变距系数
 // 变距系数 求 变位系数和差
 GearInv.EESS = function (A, ZZ, EE) {
 	if (ZZ <= 0) return 0

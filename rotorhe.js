@@ -119,8 +119,8 @@ function RotorHE({
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { size, N, NR, NS: NS4, E, GB, G, P, Q, RB, V, K, VN, VB, VV, KK, RBCC })
-	Object.assign(this, { TN, TS, BB, RR, SS, VS })
+	Object.assign(this, { N, NR, NS: NS4, E, GB, G, GE, P, Q, RB, V, K, VN, VB, VV, KK, RBCC })
+	Object.assign(this, { size, TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
 	function params(T) {
