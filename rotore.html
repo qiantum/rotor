@@ -5,6 +5,7 @@
 	<script src="./util.js"></script>
 	<script src="./format.js"></script>
 	<script src="./rotore.js"></script>
+	<script src="./gear.js"></script>
 	<script>
 		if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
 		function Onload() {
@@ -36,6 +37,7 @@
 				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
 				for (let t of ticks) Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2]))
 				for (let t of ticks) Text(DrawSS(t[0], s, t[3]))
+				for (let t of ticks) t[4] && Text(...DrawGear(t[4], s))
 			}
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
@@ -45,6 +47,11 @@
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
 				for (let canv = 1; canv <= 3; Break(), canv++) for (let t of ticks) t.push(Canv())
+				if (conf.N == 2 && mode.get('gear') != null) {
+					for (let [t, ge] of Object.entries([1, 0, 1.5, 2.5]))
+						Gear(ticks[0][0], ge, ticks[t])
+					Break()
+				}
 				Tick()
 			} else if (conf.N >= 2) {
 				let rot = Rot()
@@ -67,7 +74,7 @@
 
 			function Draw(rot, s, canv, sss) {
 				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = canv.$ ??= rot.$(canv)
+				let $ = (canv.$ ??= rot.$(canv))
 				let T = rot.TS(s)
 				canv.S = [s]
 				if (!sss)
@@ -87,39 +94,38 @@
 			}
 			function DrawSS(rot, s, canv) {
 				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = canv.$ ??= rot.$(canv)
+				let $ = (canv.$ ??= rot.$(canv))
 				let T = rot.TS(s ?? 0)
-				$.GG(0), $.GB(), s != null && $.RR(T), $.param(), (T = 0)
-				for (s = 0; s < rot.NS; s++) $.SSS(T, s, Sstyle(s, sline, sdash), false)
-				return (canv.rot = rot), (canv.S = [...sname.keys()]), canv
+				$.GG(0), $.GB(), s != null && $.RR(T), $.param()
+				for (s = 0; s < rot.NS; s++) $.SSS(0, s, Sstyle(s, sline, sdash), false)
+				return (canv.rot = rot), (canv.T = T), (canv.S = [...sname.keys()]), canv
 			}
 
-			function Canv() {
+			function Canv(zoom) {
 				let $ = body.querySelector('template').content.cloneNode(true)
 				let canvas = $.querySelector('canvas')
 				canvas.width = canvas.height = size
 				let text = $.querySelectorAll('pre')
 				main.insertBefore($, main.lastElementChild)
-				return { canvas, text, param: text[3] }
+				return { canvas, text, param: text[3], zoom }
 			}
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
-			function Text(canv, ...texts) {
+			function Text(canv, sub, text0) {
 				let $ = canv.text
 				let s = canv.S.map(s => {
 					let i = floor(s / sname.length)
 					i = i ? i + 1 : ''
-					let sub = texts[0] ? round((s % 1) * texts[0]) : ''
+					sub = sub ? round((s % 1) * sub) : ''
 					return `${i}${sname[floor(s).mod(sname.length)]}${sub}`
 				})
-				$[0].textContent = s.join('\n')
+				$[0].textContent = s.join('\n') + (text0 ?? '')
 				let t = (canv.T ?? 0) / PI2
 				let te = t * canv.rot.NR
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				te = _`${floor(te)}{}+${floor(te * 360).mod(360)}{03}\n`
-				$[1].textContent = (canv.T != null ? t + te : '') + (texts[1] ?? '')
-				$[2].textContent = texts[2] ?? ''
+				$[1].textContent = canv.T != null ? t + te : ''
 				return canv
 			}
 			function Spair(s) {
@@ -129,6 +135,33 @@
 			function Sstyle(s, color = sfill, dash) {
 				s = floor(s + EPSI).mod(sname.length)
 				return { color: color[s], dash: dash?.[s], thick: dash && 4 }
+			}
+
+			function Gear(rot, ge, tick) {
+				let A, Z, Z2, ZZ
+				;(A = 20), (Z = 12), (Z2 = (Z / (rot.N - 1)) * rot.N), (ZZ = Z2 - Z)
+				let BE = round(rot.GB + rot.E * (rot.GE * ge))
+				let M = GearInv.M(ZZ, rot.E, 0)
+				let S, g
+				for (S = rot.GE * ge; (g = new GearInv({ M, A, Z, S })).F < BE; )
+					(S += max(BE - g.F, 0.25) / M), console.log(S)
+				let g2 = new GearInv({ M, A, Z: Z2, S, I: true, T0: PI })
+				;(g.G = g.G2(rot.E, g2)), (g2.G = g2.G2(rot.E, g))
+				let canv = Canv(2.7)
+				tick.push({ rot, g, g2, canv, BE })
+			}
+			function DrawGear({ rot, g, g2, canv, BE }, s) {
+				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
+				;(canv.midx = canv.midy = 0), (canv.param = canv.text[3])
+				let $ = g.$(canv)
+				$.O(0), $.B(), $.G(g.G), $.CZ(0), $.param(0)
+				let T = (canv.T = rot.TS(s))
+				canv.S = [s]
+				;(canv.midx = rot.GX(T) * canv.zoom), (canv.midy = rot.GY(T) * canv.zoom)
+				canv.param = canv.text[2]
+				$ = g2.$(canv)
+				$.O(T), $.B(), $.G(g2.G), $.CZ(T), $.param(T)
+				return (canv.rot = rot), (canv.T = T), [canv, null, _` BE${BE}`]
 			}
 
 			function Url(url, k, ok, v, replace) {
