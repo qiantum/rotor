@@ -3,8 +3,8 @@
 <html>
 	<meta charset="utf-8" />
 	<script src="./util.js"></script>
-	<script src="./rotore.js"></script>
 	<script src="./format.js"></script>
+	<script src="./rotore.js"></script>
 	<script>
 		if (location.href.endsWith('?')) location.replace(location.href.slice(0, -1))
 		function Onload() {
@@ -39,7 +39,7 @@
 			}
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
-				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5, 6, 7]) {
+				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5]) {
 					for (let P of conf.N >= 2 ? [undefined, 0.7, 1.7, 2 + N / 3] : [undefined])
 						ticks.push([Rot({ N, P })])
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
@@ -67,7 +67,7 @@
 
 			function Draw(rot, s, canv, sss) {
 				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = rot.$(canv)
+				let $ = canv.$ ??= rot.$(canv)
 				let T = rot.TS(s)
 				canv.S = [s]
 				if (!sss)
@@ -87,7 +87,7 @@
 			}
 			function DrawSS(rot, s, canv) {
 				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = rot.$(canv)
+				let $ = canv.$ ??= rot.$(canv)
 				let T = rot.TS(s ?? 0)
 				$.GG(0), $.GB(), s != null && $.RR(T), $.param(), (T = 0)
 				for (s = 0; s < rot.NS; s++) $.SSS(T, s, Sstyle(s, sline, sdash), false)

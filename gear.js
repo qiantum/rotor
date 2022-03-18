@@ -111,7 +111,7 @@ function GearInv({
 		function $CZ(T, style) {
 			for (let z = 0; z < Z; z++) $C(T, z, style)
 		}
-		return Object.assign({ param: $param, x, y, O: $O, B: $B, G: $G, C: $C, CZ: $CZ })
+		return { param: $param, x, y, O: $O, B: $B, G: $G, C: $C, CZ: $CZ }
 	}
 }
 GearInv.AT = A => tan(A) - A // 压力角求展角（展角+压力角=渐开角）
