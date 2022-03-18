@@ -145,9 +145,9 @@
 				let S, g
 				for (S = rot.GE * ge; (g = new GearInv({ M, A, Z, S })).F < BE; )
 					(S += max(BE - g.F, 0.25) / M), console.log(S)
-				let g2 = new GearInv({ M, A, Z: Z2, S, I: true, T0: PI })
+				let g2 = new GearInv({ M, A, Z: Z2, S, I: true, T0: PI * (Z << 31 >> 31) })
 				;(g.G = g.G2(rot.E, g2)), (g2.G = g2.G2(rot.E, g))
-				let canv = Canv(2.7)
+				let canv = Canv(3.2)
 				tick.push({ rot, g, g2, canv, BE })
 			}
 			function DrawGear({ rot, g, g2, canv, BE }, s) {
