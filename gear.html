@@ -73,7 +73,7 @@
 			}
 			function Text(canv, ...texts) {
 				let $ = canv.text
-				$[0].textContent = _`EE${canv.EE}{2} E${canv.E}{.1}`
+				$[0].textContent = _`${canv.EE}{2} E${canv.E}{.1}`
 				let t = canv.T / PI2
 				let t2 = abs(canv.T2) / PI2
 				t =
@@ -137,9 +137,13 @@
 			<summary>
 				请使用最新版浏览器，需要canvas画图。参数说明：
 				<pre>
+<!--			--->变距系数 E 中心距    小齿轮旋转角 大齿轮旋转角
+
+<!--			--->小齿轮：                            大齿轮：
 <!--			--->M 模数 A 压力角
-<!--			--->Z 齿数 S 变位系数
-<!--			--->B 基圆半径 P 分度圆半径 U 顶圆半径 F 根圆半径
+<!--			--->Z 齿数 S 变位系数                   同小齿轮
+<!--			--->B 基圆半径 P 分度圆半径
+<!--			--->F 根圆半径 U 顶圆半径
 <!--		---></pre>
 				版权所有 <a href="http://qiantum.com">蔡倩彦</a> | 开源许可 GPLv3
 			</summary>
