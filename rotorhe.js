@@ -120,7 +120,7 @@ function RotorHE({
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
 	Object.assign(this, { N, NR, NS: NS4, E, GB, G, GE, P, Q, RB, V, K, VN, VB, VV, KK, RBCC })
-	Object.assign(this, { size, TN, TS, BB, RR, SS, VS })
+	Object.assign(this, { size, GX, GY, TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
 	function params(T) {
@@ -140,9 +140,9 @@ function RotorHE({
 	}
 	console.log(...params().split('__'), _`Vmin${V0 / 100}{.1} tn${tickn}`)
 
-	this.$ = ({ canvas, x, y, param }) => {
-		x ??= canvas.width / 2 // 曲轴心X
-		y ??= canvas.height / 2 // 曲轴心Y
+	this.$ = ({ canvas, midx = 0, midy = 0, x, y, param }) => {
+		x ??= canvas.width / 2 + midx // 曲轴心X
+		y ??= canvas.height / 2 + midy // 曲轴心Y
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
 		let $ = canvas.getContext('2d')
 		let gb = GB + E * GE

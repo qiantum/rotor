@@ -105,12 +105,12 @@
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
-			function Text(canv, ...texts) {
+			function Text(canv, text0, text1) {
 				let $ = canv.text
 				let s = canv.S.map(s => {
 					let i = floor(s / sname.length)
 					i = i ? i + 1 : ''
-					let sub = texts[0] ? round((s % 1) * texts[0]) : ''
+					let sub = text0 ? round((s % 1) * text0) : ''
 					return `${i}${sname[floor(s).mod(sname.length)]}${sub}`
 				})
 				$[0].textContent = s.join('\n')
@@ -118,8 +118,7 @@
 				let te = t * canv.rot.NR
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				te = _`${floor(te)}{}+${floor(te * 360).mod(360)}{03}\n`
-				$[1].textContent = (canv.T != null ? t + te : '') + (texts[1] ?? '')
-				$[2].textContent = texts[2] ?? ''
+				$[1].textContent = (canv.T != null ? t + te : '') + (text1 ?? '')
 				return canv
 			}
 			function Spair(s) {

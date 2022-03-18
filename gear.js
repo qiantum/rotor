@@ -26,17 +26,20 @@ function GearInv({
 	let B = P * cos(AA) // 基圆半径
 	let U = P + M * (S + (I ? 1.25 : 1)) // 齿顶半径
 	let F = P + M * (S - (I ? 1 : 1.25)) // 齿根半径
-	I ? F < B && (F = B) : F < M && (F = M)
+	let fixF = max(0, (I ? B : M) - F)
+	F += fixF
 	// let Q = P + M * S // 中分圆半径
 	// U = Q + M * (I ? 1.25 : 1) // 齿顶半径
 	// F = Q - M * (I ? 1 : 1.25) // 齿根半径
 	// let CQ = sqrt(Q * Q - B * B) / B // 中分渐开角
 	// TB = TQ + (CQ - acos(B / Q)) * 2 // 基角（依据基点，中分齿厚角+两侧中分展角）
 
+	let fixU = 0
 	if (S > 0) {
 		let u = U // 齿廓交叉修正
 		for (; GearInv.RT(u, B) > TB / 2; u -= M / 32);
-		if (u < U) F -= U - (U = u)
+		fixU = u - U
+		if (fixU) (U = u), (F += fixU), (fixF += fixU)
 	}
 	let CU = GearInv.RC(U, B) // 齿顶渐开角
 	let CF = GearInv.RC(F, B) // 齿根渐开角
@@ -53,13 +56,13 @@ function GearInv({
 
 	// 参数显示
 	function params(T) {
-		return _`M${M} A${A}__Z${Z} S${S}{2}__B${B}{.1} P${P}{.1}__F${F}{.1} U${U}{.1}__`
+		return _`M${M}{3} A${A}__Z${Z} S${S}{2}__B${B}{.1} P${P}{.1}__F${F}{.1} U${U}{.1}__`
 	}
-	console.log(...params().split('__'), _`${TB}{5} tn${tickn}`, F < B ? 'F<B' : ' ')
+	console.log(...params().split('__'), _`${TB}{5} tn${tickn}`, _`F${fixF}{.1} U${fixU}{.1}`)
 
-	this.$ = ({ canvas, x, y, zoom = 1, param }) => {
-		x ??= canvas.width / 2 // 齿心X
-		y ??= canvas.height / 2 // 齿心Y
+	this.$ = ({ canvas, midx = 0, midy = 0, x, y, zoom = 1, param }) => {
+		x ??= canvas.width / 2 + midx // 齿心X
+		y ??= canvas.height / 2 + midy // 齿心Y
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
 		let $ = canvas.getContext('2d')
 
