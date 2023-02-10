@@ -37,7 +37,7 @@ function* sequ(a, b, wrap, oneAll, rev) {
 		for (a = a.mod(wrap), b = b.mod(wrap); yield rev ? b : a, oneAll || a != b; )
 			rev ? (b = (b - 1).mod(wrap)) : (a = (a + 1).mod(wrap)), (oneAll = false)
 }
-Array.prototype
+
 for (let [k, f] of Object.entries({
 	rev() {
 		return [...this].reverse()

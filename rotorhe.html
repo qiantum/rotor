@@ -29,8 +29,8 @@
 			let sdual = mode.get('.2') != null
 			let size = +mode.get('size') || 320
 			let conf = { N: mode.get('n') | 0, size }
-			let ticks = []
 
+			let ticks = []
 			function Tick() {
 				let s = tick.value | 0
 				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
@@ -44,35 +44,35 @@
 						ticks.push([Rot({ N, P })])
 					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
 				}
-				for (let canv = 1; canv <= 3; Break(), canv++) for (let t of ticks) t.push(Canv())
+				for (let brea = 1; brea <= 3; Break(), brea++) for (let t of ticks) t.push(The())
 				Tick()
 			} else if (conf.N >= 2) {
 				let rot = Rot()
 				let sub = rot.N <= 3 ? 6 : rot.N == 5 ? 5 : 4
 				for (let ns = 0; ns < rot.NS; ns++) {
 					for (let s = ns; s < ns + 1; s = (round(s * sub) + 1) / sub)
-						Text(Draw(rot, s, Canv()), sub)
+						Text(Draw(rot, s, The()), sub)
 					if (sub >= rot.NS || ns & 1) Break()
 				}
 			} else {
 				let rots = [2, 3, 4, 5, 6].map(N => Rot({ N }))
 				for (let s = 0; s < 4; Break(), s++)
 					for (let rot of rots)
-						if (s < 4) Text(Draw(rot, s, Canv()))
-						else Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, Canv()))
+						if (s < 4) Text(Draw(rot, s, The()))
+						else Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, The()))
 			}
 			function Rot(con) {
 				return new RotorHE({ ...conf, ...con, evn })
 			}
 
-			function Draw(rot, s, canv, sss) {
-				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = canv.$ ??= rot.$(canv)
+			function Draw(rot, s, the, sss) {
+				the.canvas.getContext('2d').clearRect(0, 0, size, size)
+				let $ = the.$ ??= rot.$(the)
 				let T = rot.TS(s)
-				canv.S = [s]
+				the.S = [s]
 				if (!sss)
 					for (let n = 0; n < rot.N; n++)
-						$.SS(T, -n, Sstyle((canv.S[n] = s + rot.TN(n) / rot.TS(1))))
+						$.SS(T, -n, Sstyle((the.S[n] = s + rot.TN(n) / rot.TS(1))))
 				else {
 					let s0 = s | 0
 					if (abs(s - round(s)) <= 1 / 15) $.SSS(T, Spair(s), Sstyle(Spair(s)))
@@ -83,18 +83,18 @@
 				$.RR(T), $.BB()
 				ticky && $.RB()
 				$.param(T)
-				return (canv.rot = rot), (canv.T = T), canv
+				return (the.rot = rot), (the.T = T), the
 			}
-			function DrawSS(rot, s, canv) {
-				canv.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = canv.$ ??= rot.$(canv)
+			function DrawSS(rot, s, the) {
+				the.canvas.getContext('2d').clearRect(0, 0, size, size)
+				let $ = the.$ ??= rot.$(the)
 				let T = rot.TS(s ?? 0)
 				s != null && $.QQ(), $.GG(T), $.G(T), $.param()
 				for (s = 0; s < rot.NS; s++) $.SSS(T, s, Sstyle(s, sline, sdash), false)
-				return (canv.rot = rot), (canv.T = T), (canv.S = [...sname.keys()]), canv
+				return (the.rot = rot), (the.T = T), (the.S = [...sname.keys()]), the
 			}
 
-			function Canv() {
+			function The() {
 				let $ = body.querySelector('template').content.cloneNode(true)
 				let canvas = $.querySelector('canvas')
 				canvas.width = canvas.height = size
@@ -105,21 +105,21 @@
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
-			function Text(canv, text0, text1) {
-				let $ = canv.text
-				let s = canv.S.map(s => {
+			function Text(the, text0, text1) {
+				let $ = the.text
+				let s = the.S.map(s => {
 					let i = floor(s / sname.length)
 					i = i ? i + 1 : ''
 					let sub = text0 ? round((s % 1) * text0) : ''
 					return `${i}${sname[floor(s).mod(sname.length)]}${sub}`
 				})
 				$[0].textContent = s.join('\n')
-				let t = (canv.T ?? 0) / PI2
-				let te = t * canv.rot.NR
+				let t = (the.T ?? 0) / PI2
+				let te = t * the.rot.NR
 				t = _`${floor(t)}{}+${floor(t * 360).mod(360)}{03}\n`
 				te = _`${floor(te)}{}+${floor(te * 360).mod(360)}{03}\n`
-				$[1].textContent = (canv.T != null ? t + te : '') + (text1 ?? '')
-				return canv
+				$[1].textContent = (the.T != null ? t + te : '') + (text1 ?? '')
+				return the
 			}
 			function Spair(s) {
 				let sp = round(s)
