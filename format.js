@@ -44,9 +44,6 @@ let Format = function (o, f) {
 }
 
 let _ = (globalThis._ = function (strs, ...args) {
-	/* usage: F`Demo: 1+1.5 = ${1+1.5}{.2f}` 
-          --> "Demo: 1+1.5 = 2.50" 
-    */
 	let R = strs[0]
 	args.forEach((arg, i) => {
 		let fmt = strs[i + 1].match(/^\{(.*)\}/)

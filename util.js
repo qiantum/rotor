@@ -102,7 +102,7 @@ function area(s) {
 	return roundepsi(a)
 }
 
-function fillhole(hole) {
+Array.prototype.fillHole ??= function (hole) {
 	let ii = this.findIndex(v => v != hole)
 	if (ii < 0) throw 'all hole'
 	let len = this.length

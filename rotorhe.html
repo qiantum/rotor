@@ -14,8 +14,6 @@
 			let body = document.body
 			let main = body.querySelector('main')
 			let evn = mode.get('evn') != null
-			let ticky = mode.get('tick') != null
-			let tick = body.querySelector('#tick')
 
 			//let { min, max, floor, round, ceil, PI } = Math, PI2 = PI+PI
 			let sname = ['I', 'C', 'P', 'E']
@@ -30,21 +28,23 @@
 			let size = +mode.get('size') || 320
 			let conf = { N: mode.get('n') | 0, size }
 
+			let ticky = mode.get('tick') != null
+			let tick = body.querySelector('#tick')
 			let ticks = []
 			function Tick() {
 				let s = tick.value | 0
 				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
-				for (let t of ticks) Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2]))
-				for (let t of ticks) Text(DrawSS(t[0], s, t[3]))
+				for (let t of ticks) Text(Draw(t.r, s, t[0], true)), Text(Draw(t.r, s, t[1]))
+				for (let t of ticks) Text(DrawSS(t.r, s, t[2]))
 			}
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5]) {
 					for (let P of conf.N >= 2 ? [undefined, 0, 1, 2] : [undefined])
-						ticks.push([Rot({ N, P })])
-					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
+						ticks.push({ r: Rot({ N, P }) })
+					tick.max = max(tick.max, 900 + max(ticks.at(-1).r.NS - 5, 0) * 40)
 				}
-				for (let brea = 1; brea <= 3; Break(), brea++) for (let t of ticks) t.push(The())
+				for (let tt = 0; tt < 3; Break(), tt++) for (let t of ticks) t[tt] = The()
 				Tick()
 			} else if (conf.N >= 2) {
 				let rot = Rot()
@@ -61,8 +61,20 @@
 						if (s < 4) Text(Draw(rot, s, The()))
 						else Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, The()))
 			}
-			function Rot(con) {
-				return new RotorHE({ ...conf, ...con, evn })
+
+			function Rot(more) {
+				return new RotorHE({ ...conf, ...more, evn })
+			}
+			function The() {
+				let $ = body.querySelector('template').content.cloneNode(true)
+				let canvas = $.querySelector('canvas')
+				canvas.width = canvas.height = size
+				let text = $.querySelectorAll('pre')
+				main.insertBefore($, main.lastElementChild)
+				return { canvas, text, param: text[3] }
+			}
+			function Break() {
+				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
 
 			function Draw(rot, s, the, sss) {
@@ -94,17 +106,6 @@
 				return (the.rot = rot), (the.T = T), (the.S = [...sname.keys()]), the
 			}
 
-			function The() {
-				let $ = body.querySelector('template').content.cloneNode(true)
-				let canvas = $.querySelector('canvas')
-				canvas.width = canvas.height = size
-				let text = $.querySelectorAll('pre')
-				main.insertBefore($, main.lastElementChild)
-				return { canvas, text, param: text[3] }
-			}
-			function Break() {
-				main.insertBefore(document.createElement('br'), main.lastElementChild)
-			}
 			function Text(the, text0, text1) {
 				let $ = the.text
 				let s = the.S.map(s => {

@@ -15,8 +15,6 @@
 			let body = document.body
 			let main = body.querySelector('main')
 			let evn = mode.get('evn') != null
-			let ticky = mode.get('tick') != null
-			let tick = body.querySelector('#tick')
 
 			//let { min, max, floor, round, ceil, PI } = Math, PI2 = PI+PI
 			let sname = ['I', 'C', 'P', 'E']
@@ -31,25 +29,27 @@
 			let size = +mode.get('size') || 320
 			let conf = { N: mode.get('n') | 0, size }
 
+			let ticky = mode.get('tick') != null
+			let tick = body.querySelector('#tick')
 			let ticks = []
 			function Tick() {
 				let s = tick.value | 0
 				s = s <= 900 ? s / 180 : 5 + (s - 900) / 40
-				for (let t of ticks) Text(Draw(t[0], s, t[1], true)), Text(Draw(t[0], s, t[2]))
-				for (let t of ticks) Text(DrawSS(t[0], s, t[3]))
-				for (let t of ticks) t[4] && Text(...DrawGear(t[4], s))
+				for (let t of ticks) Text(Draw(t.r, s, t[0], true)), Text(Draw(t.r, s, t[1]))
+				for (let t of ticks) Text(DrawSS(t.r, s, t[2]))
+				for (let t of ticks) t.g && Text(...DrawGear(t.g, s))
 			}
 			if (ticky) {
 				;(tick.oninput = Tick), (tick.disabled = false), tick.focus()
 				for (let N of conf.N >= 2 ? [conf.N] : [2, 3, 4, 5]) {
 					for (let P of conf.N >= 2 ? [undefined, 0.7, 1.7, 2 + N / 3] : [undefined])
-						ticks.push([Rot({ N, P })])
-					tick.max = max(tick.max, 900 + max(ticks.at(-1)[0].NS - 5, 0) * 40)
+						ticks.push({ r: Rot({ N, P }) })
+					tick.max = max(tick.max, 900 + max(ticks.at(-1).r.NS - 5, 0) * 40)
 				}
-				for (let brea = 1; brea <= 3; Break(), brea++) for (let t of ticks) t.push(The())
+				for (let tt = 0; tt < 3; Break(), tt++) for (let t of ticks) t[tt] = The()
 				if (conf.N == 2 && mode.get('gear') != null) {
 					for (let [t, ge] of Object.entries([1, 0, 1.5, 2.5]))
-						Gear(ticks[0][0], ge, ticks[t])
+						ticks[t].g = Gear(ticks[0].r, ge)
 					Break()
 				}
 				Tick()
@@ -68,8 +68,20 @@
 						if (s < 4) Text(Draw(rot, s, The()))
 						else Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, The()))
 			}
-			function Rot(con) {
-				return new RotorE({ ...conf, ...con, evn })
+
+			function Rot(more) {
+				return new RotorE({ ...conf, ...more, evn })
+			}
+			function The(zoom) {
+				let $ = body.querySelector('template').content.cloneNode(true)
+				let canvas = $.querySelector('canvas')
+				canvas.width = canvas.height = size
+				let text = $.querySelectorAll('pre')
+				main.insertBefore($, main.lastElementChild)
+				return { canvas, text, param: text[3], zoom }
+			}
+			function Break() {
+				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
 
 			function Draw(rot, s, the, sss) {
@@ -100,18 +112,6 @@
 				for (s = 0; s < rot.NS; s++) $.SSS(0, s, Sstyle(s, sline, sdash), false)
 				return (the.rot = rot), (the.T = T), (the.S = [...sname.keys()]), the
 			}
-
-			function The(zoom) {
-				let $ = body.querySelector('template').content.cloneNode(true)
-				let canvas = $.querySelector('canvas')
-				canvas.width = canvas.height = size
-				let text = $.querySelectorAll('pre')
-				main.insertBefore($, main.lastElementChild)
-				return { canvas, text, param: text[3], zoom }
-			}
-			function Break() {
-				main.insertBefore(document.createElement('br'), main.lastElementChild)
-			}
 			function Text(the, sub, text0) {
 				let $ = the.text
 				let s = the.S.map(s => {
@@ -137,7 +137,7 @@
 				return { color: color[s], dash: dash?.[s], thick: dash && 4 }
 			}
 
-			function Gear(rot, ge, the) {
+			function Gear(rot, ge) {
 				let A, Z, Z2, ZZ
 				;(A = 30), (Z = 16), (Z2 = (Z / (rot.N - 1)) * rot.N), (ZZ = Z2 - Z)
 				let BE = round(rot.GB + rot.E * (rot.GE * ge))
@@ -147,7 +147,7 @@
 					(S += max(BE - g.F, 0.25) / M), console.log(S)
 				let g2 = new GearInv({ M, A, Z: Z2, S, I: true, T0: PI * (Z << 31 >> 31) })
 				;(g.G = g.G2(rot.E, g2)), (g2.G = g2.G2(rot.E, g))
-				the.push({ rot, g, g2, the: The(3.2), BE })
+				return { rot, g, g2, the: The(3.2), BE }
 			}
 			function DrawGear({ rot, g, g2, the, BE }, s) {
 				the.canvas.getContext('2d').clearRect(0, 0, size, size)

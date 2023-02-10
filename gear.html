@@ -14,12 +14,12 @@
 			let body = document.body
 			let main = body.querySelector('main')
 			let I = mode.get('ig') != null
-			let tick = body.querySelector('#tick')
 
 			let r = +mode.get('r') || 0
 			let size = +mode.get('size') || 320
 			let conf = { M: +mode.get('m') || 4, A: +mode.get('a') || 20 }
 
+			let tick = body.querySelector('#tick')
 			let ticks = []
 			function Tick() {
 				let T = tick.value | 0
@@ -52,14 +52,6 @@
 			}
 			Tick()
 
-			function Draw(g, T, the, n) {
-				n ? (the.T2 = T) : (the.T = T)
-				the.x = the.canvas.width * (I ? 0.75 : 0.5) + the.zoom * (!I && n ? g.G : -g.G)
-				the.param = the.text[n ? 3 : 2]
-				let $ = g.$(the)
-				$.O(T), $.B(), $.G(g.G), $.CZ(T)
-				$.param(T)
-			}
 			function The(more) {
 				let $ = body.querySelector('template').content.cloneNode(true)
 				let canvas = $.querySelector('canvas')
@@ -71,7 +63,16 @@
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
 			}
-			function Text(the, ...texts) {
+
+			function Draw(g, T, the, n) {
+				n ? (the.T2 = T) : (the.T = T)
+				the.x = the.canvas.width * (I ? 0.75 : 0.5) + the.zoom * (!I && n ? g.G : -g.G)
+				the.param = the.text[n ? 3 : 2]
+				let $ = g.$(the)
+				$.O(T), $.B(), $.G(g.G), $.CZ(T)
+				$.param(T)
+			}
+			function Text(the, text1) {
 				let $ = the.text
 				$[0].textContent = _`${the.EE}{2} E${the.E}{.1}`
 				let t = the.T / PI2
@@ -79,7 +80,7 @@
 				t =
 					_`${floor(t)}{}+${floor(t * 360).mod(360)}{03} ` +
 					_`${floor(t2)}{}+${floor(t2 * 360).mod(360)}{03}\n`
-				$[1].textContent = (the.T != null ? t : '') + (texts[1] ?? '')
+				$[1].textContent = (the.T != null ? t : '') + (text1 ?? '')
 				return the
 			}
 
