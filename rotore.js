@@ -50,7 +50,7 @@ function RotorE({
 	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TN(n)) // 转子腰X
 	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TN(n)) // 转子腰X
 	let BX = (T, B, p = P + RB) => p * cos(B + T) - E * cos(B * NE + T) // 缸体点X T0为PX(B-TPQ,0,p)
-	let BY = (T, B, p = P + RB) => p * sin(B + T) - E * sin(B * NE + T) // 缸体点Y T0为PY(T-TPQ,0,p)
+	let BY = (T, B, p = P + RB) => p * sin(B + T) - E * sin(B * NE + T) // 缸体点Y T0为PY(B-TPQ,0,p)
 
 	// 缸体型线
 	let BB = Tick_.map(B => [BX(0, B), BY(0, B)])
@@ -76,7 +76,7 @@ function RotorE({
 		else for (B of B) yield BRT(B)
 	}
 	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(BRT(Tick), true)
-	let RR = enve(min, BRT(St(0).imap(Tick.At)), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
+	let RR = enve(min, BRT(St(0).imap(Tick.At)), t => (t % tPQ ? null : t % (tickn / NR) ? P : Q))
 
 	// 工作区型线，== ...RR(T + TN(n), St(0, 0, true))
 	let SS = (T, n = 0, _ = St(T, n).imap(BB.At)) => _.iconcat(RR(T, St(0, n, true))).iclose()

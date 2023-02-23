@@ -63,10 +63,9 @@
 				}
 			} else {
 				let rots = [2, 3, 4, 5, 6].map(N => Rot({ N }))
-				for (let s = 0; s <= 4; Break(), s++)
-					for (let rot of rots)
-						if (s < 4) Text(Draw(rot, s, The()))
-						else Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, The()))
+				for (let s = 0; s < 4; Break(), s++) for (let rot of rots) Text(Draw(rot, s, The()))
+				for (let rot of rots) Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, The()))
+				Break()
 			}
 
 			function Rot(more) {

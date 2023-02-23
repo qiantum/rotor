@@ -56,22 +56,21 @@
 				}
 			} else {
 				let rots = [2, 3, 4, 5, 6].map(N => Rot({ N }))
-				for (let s = 0; s < 4; Break(), s++)
-					for (let rot of rots)
-						if (s < 4) Text(Draw(rot, s, The()))
-						else Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, The()))
+				for (let s = 0; s < 4; Break(), s++) for (let rot of rots) Text(Draw(rot, s, The()))
+				for (let rot of rots) Text(DrawSS(Rot({ N: rot.N, P: 0 }), null, The()))
+				Break()
 			}
 
 			function Rot(more) {
 				return new RotorHE({ ...conf, ...more, evn })
 			}
-			function The() {
+			function The(zoom) {
 				let $ = body.querySelector('template').content.cloneNode(true)
 				let canvas = $.querySelector('canvas')
 				canvas.width = canvas.height = size
 				let text = $.querySelectorAll('pre')
 				main.insertBefore($, main.lastElementChild)
-				return { canvas, text, param: text[3] }
+				return { canvas, text, param: text[3], zoom }
 			}
 			function Break() {
 				main.insertBefore(document.createElement('br'), main.lastElementChild)
@@ -79,7 +78,7 @@
 
 			function Draw(rot, s, the, sss) {
 				the.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = the.$ ??= rot.$(the)
+				let $ = (the.$ ??= rot.$(the))
 				let T = rot.TS(s)
 				the.S = [s]
 				if (!sss)
@@ -93,13 +92,13 @@
 				ticky && $.QQ(), $.GG(T), $.E(T), $.GB(), $.G(T)
 				ticky && $.RBC(T), $.P(T, 0, 0)
 				$.RR(T), $.BB()
-				ticky && $.RB()
 				$.param(T)
+				ticky && $.RB(T)
 				return (the.rot = rot), (the.T = T), the
 			}
 			function DrawSS(rot, s, the) {
 				the.canvas.getContext('2d').clearRect(0, 0, size, size)
-				let $ = the.$ ??= rot.$(the)
+				let $ = (the.$ ??= rot.$(the))
 				let T = rot.TS(s ?? 0)
 				s != null && $.QQ(), $.GG(T), $.G(T), $.param()
 				for (s = 0; s < rot.NS; s++) $.SSS(T, s, Sstyle(s, sline, sdash), false)

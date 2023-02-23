@@ -102,14 +102,14 @@ function GearInv({
 			let to
 			T += TZ(z)
 			for (let C = CF; C <= CU + EPSI; C += Ct)
-				(to = to ? $.lineTo : $.moveTo).call($, x + CX(T, C) * zoom, y + CY(T, C) * zoom)
+				(to = to ? $.lineTo : $.moveTo).call($, x + CX(T, C) * zoom, y - CY(T, C) * zoom)
 			for (let C = CU; C >= CF - EPSI; C -= Ct)
-				$.lineTo(x + CX(T + TB, -C) * zoom, y + CY(T + TB, -C) * zoom)
+				$.lineTo(x + CX(T + TB, -C) * zoom, y - CY(T + TB, -C) * zoom)
 			if (f) {
 				if (F < B)
-					$.lineTo(x + F * cos(T + TB) * zoom, y + F * sin(T + TB) * zoom),
-						$.lineTo(x + F * cos(T + TP) * zoom, y + F * sin(T + TP) * zoom)
-				$.lineTo(x + CX(T + TP, CF) * zoom, y + CY(T + TP, CF) * zoom)
+					$.lineTo(x + F * cos(T + TB) * zoom, y - F * sin(T + TB) * zoom),
+						$.lineTo(x + F * cos(T + TP) * zoom, y - F * sin(T + TP) * zoom)
+				$.lineTo(x + CX(T + TP, CF) * zoom, y - CY(T + TP, CF) * zoom)
 			}
 			$$$()
 		}
