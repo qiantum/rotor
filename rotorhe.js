@@ -54,17 +54,17 @@ function RotorHE({
 	let QX = (n, q = Q) => q * cos(TN(n) + TPQ) // 缸体腰X
 	let QY = (n, q = Q) => q * sin(TN(n) + TPQ) // 缸体腰Y
 	// 转子点XY，R顶腰处Tick整倍数，顶X==GX(T)+RP*cos(T+TN1(n)) 顶Y==GY(T)+RP*sin(T+TN1(n))
-	let RX = (T, R, rp = RP, x = GX(T)) => (rp - E) * cos(R + T) + E * cos(R * N + T) + x
-	let RY = (T, R, rp = RP, y = GY(T)) => (rp - E) * sin(R + T) + E * sin(R * N + T) + y
+	let RX = (T, R, rp = RP) => (rp - E) * cos(R + T) + E * cos(R * N + T) + GX(T)
+	let RY = (T, R, rp = RP) => (rp - E) * sin(R + T) + E * sin(R * N + T) + GY(T)
 
 	// 转子型线、即缸体腰绕转子心的外旋轮线
 	function* RR(T, Rt, RT = Tick_) {
 		for (let R of Rt?.imap(Tick_.At) ?? RT) yield [RX(T, R), RY(T, R)]
 	}
-	let TR = Tick_.map(R => atan(RX(0, R, undefined, 0), RY(0, R, undefined, 0)))
+	let TR = Tick_.map(R => atan(RX(0, R) - GX(0), RY(0, R) - GY(0)))
 	TR[TR.length - 1] = PI2 // 转子步进角，非均匀
 
-	// 转子工作线步进，T每TS(s)为tickn整倍数，短于转子顶线，缸体工作线==St(0,n)
+	// 转子工作线步进，每TS(s)T为tickn整倍数，短于转子顶线，缸体工作线==St(0,n)
 	function St(T, n = 0, rev) {
 		if (abs(T) < EPSI && n == 0) return sequ(-tPQ, tPQ, tickn, false, rev) // ==St(0,0)
 		let R1 = (atan(QX(n - 1) - GX(T), QY(n - 1) - GY(T)) - T).mod(PI2)
@@ -72,7 +72,7 @@ function RotorHE({
 		return sequ(round(R1.bfind(TR)) % tickn, round(R.bfind(TR)) % tickn, tickn, false, rev)
 	}
 
-	// 转子对缸体心旋转
+	// 转子对缸体心旋转 R:转自步进 T:旋转步进
 	function* RBT(R, q = Q) {
 		if (typeof R == 'number')
 			for (let T of Tick_) {

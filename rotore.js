@@ -49,15 +49,15 @@ function RotorE({
 	let PY = (T, n = 0, p = P) => GY(T) + p * sin(T + TN(n) + TPQ) // 转子顶Y
 	let QX = (T, n = 0, q = Q) => GX(T) + q * cos(T + TN(n)) // 转子腰X
 	let QY = (T, n = 0, q = Q) => GY(T) + q * sin(T + TN(n)) // 转子腰X
-	let BX = (T, p = P + RB) => PX(T - TPQ, 0, p) // 缸体点X
-	let BY = (T, p = P + RB) => PY(T - TPQ, 0, p) // 缸体点Y
+	let BX = (T, B, p = P + RB) => p * cos(B + T) - E * cos(B * NE + T) // 缸体点X T0为PX(B-TPQ,0,p)
+	let BY = (T, B, p = P + RB) => p * sin(B + T) - E * sin(B * NE + T) // 缸体点Y T0为PY(T-TPQ,0,p)
 
-	// 缸体型线  E*cos(T*N-PI) + (P+RB)*cos(T), E*cos(T*N-PI) + (P+RB)*cos(T)
-	let BB = Tick_.map(T => [BX(T), BY(T)])
+	// 缸体型线
+	let BB = Tick_.map(B => [BX(0, B), BY(0, B)])
 	let TB = BB.map(([X, Y]) => atan(X, Y))
 	TB[TB.length - 1] = PI2 // 缸体步进角，非均匀
 
-	// 缸体工作线步进，T每TS(s)为tickn整倍数，短于缸体顶线，转子工作线==St(0,n)
+	// 缸体工作线步进，每TS(s)T为tickn整倍数，短于缸体顶线，转子工作线==St(0,n)
 	function St(T, n = 0, rev) {
 		if (abs(T) < EPSI && n == 0) return sequ(-tPQ, tPQ, tickn, false, rev) // ==St(0,0)
 		let B1 = atan(PX(T, n - 1, P + RB), PY(T, n - 1, P + RB))
@@ -65,12 +65,12 @@ function RotorE({
 		return sequ(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn, false, rev)
 	}
 
-	// 缸体对转子心旋转
+	// 缸体对转子心旋转 B:缸体步进 T:旋转步进
 	function* BRT(B) {
 		if (typeof B == 'number')
 			for (let T of Tick_) {
-				let X = P * cos(B + T) - E * cos(B * N + T) - E * cos(-T * N1)
-				let Y = P * sin(B + T) - E * sin(B * N + T) - E * sin(-T * N1)
+				let X = BX(T, B, P) - E * cos(T - T * NE)
+				let Y = BY(T, B, P) - E * sin(T - T * NE)
 				yield [atan(X, Y), dist(X, Y), X, Y] // 角[0,PI2) B==0 沿T严格递增 B>0 沿T循环严格递增
 			}
 		else for (B of B) yield BRT(B)
