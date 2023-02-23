@@ -65,7 +65,7 @@ function RotorE({
 		return sequ(round(B1.bfind(TB)) % tickn, round(B.bfind(TB)) % tickn, tickn, false, rev)
 	}
 
-	// 缸体对转子旋转
+	// 缸体对转子心旋转
 	function* BRT(B) {
 		if (typeof B == 'number')
 			for (let T of Tick_) {
@@ -75,7 +75,7 @@ function RotorE({
 			}
 		else for (B of B) yield BRT(B)
 	}
-	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(BRT(Tick, Tick), true)
+	// 转子型线、即缸体绕转子心的内包络线 // RR = MinCurve(BRT(Tick), true)
 	let RR = enve(min, BRT(St(0).imap(Tick.At)), t => (t % tPQ ? null : t % (tickn / N) ? P : Q))
 
 	// 工作区型线，== ...RR(T + TN(n), St(0, 0, true))
@@ -154,7 +154,7 @@ function RotorE({
 		// 画偏心线，即曲轴
 		function $E(T, style) {
 			$$({ color: '#ccc', thick: 4, ...style })
-			$.moveTo(x, y), $.lineTo(x + GX(T), y + GY(T)), $$$()
+			$.moveTo(x, y), $.lineTo(x + GX(T), y - GY(T)), $$$()
 		}
 		// 画缸体节圆
 		function $GB(style) {
@@ -164,7 +164,7 @@ function RotorE({
 		// 画转子节圆
 		function $G(T, style) {
 			$$({ color: '#999', dash: [gw - gwi, gw + gwi], ...style })
-			$.arc(x + GX(T), y + GY(T), g, T, T + PI2), $$$()
+			$.arc(x + GX(T), y - GY(T), g, -T, PI2 - T), $$$()
 		}
 		// 画转子节圆外包
 		function $GG(T, style) {
@@ -173,13 +173,13 @@ function RotorE({
 		// 画转子顶
 		function $P(T, nr = 0, O, style) {
 			$$({ color: '#00f', ...style })
-			$.moveTo(x + PX(T, nr), y + PY(T, nr)), $.lineTo(x + PX(T, nr, O), y + PY(T, nr, O))
+			$.moveTo(x + PX(T, nr), y - PY(T, nr)), $.lineTo(x + PX(T, nr, O), y - PY(T, nr, O))
 			$$$()
 		}
 		// 画转子腰
 		function $Q(T, nr = 0, O, style) {
 			$$({ color: '#f33', ...style })
-			$.moveTo(x + QX(T, nr), y + QY(T, nr)), $.lineTo(x + QX(T, nr, O), y + QY(T, nr, O))
+			$.moveTo(x + QX(T, nr), y - QY(T, nr)), $.lineTo(x + QX(T, nr, O), y - QY(T, nr, O))
 			$$$()
 		}
 		// 画转子全部顶
@@ -194,20 +194,20 @@ function RotorE({
 		function $RB(T, style) {
 			if (!RB) return
 			for (let Style = { color: '#00f', ...style }, n = 0; n < N; n++)
-				$$(Style), $.arc(x + PX(T, n), y + PY(T, n), RB, 0, PI2), $$$()
+				$$(Style), $.arc(x + PX(T, n), y - PY(T, n), RB, 0, PI2), $$$()
 		}
 		// 画转子腰旋转线
 		function $QQ(style) {
 			$$({ color: '#fbb', ...style })
 			let to
-			for (let T of Tick_) (to = to ? $.lineTo : $.moveTo).call($, x + QX(T), y + QY(T))
+			for (let T of Tick_) (to = to ? $.lineTo : $.moveTo).call($, x + QX(T), y - QY(T))
 			$$$()
 		}
 		// 画缸体
 		function $BB(style) {
 			$$({ color: '#00f', ...style })
 			let to
-			for (let [X, Y] of BB) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of BB) (to = to ? $.lineTo : $.moveTo).call($, x + X, y - Y)
 			$$$()
 		}
 		// 画转子
@@ -215,14 +215,14 @@ function RotorE({
 			$$(style)
 			let to
 			for (let [X, Y] of RR(T, ST != null ? St(ST) : undefined))
-				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+				(to = to ? $.lineTo : $.moveTo).call($, x + X, y - Y)
 			$$$()
 		}
 		// 画工作区
 		function $SS(T, n = 0, style) {
 			$$(style, true)
 			let to
-			for (let [X, Y] of SS(T, n)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+			for (let [X, Y] of SS(T, n)) (to = to ? $.lineTo : $.moveTo).call($, x + X, y - Y)
 			$$$(true)
 		}
 		// 画冲程区
@@ -230,16 +230,16 @@ function RotorE({
 			$$(style, fill)
 			let to
 			for (let [X, Y] of SSS[floor(S).mod(NS)](T))
-				(to = to ? $.lineTo : $.moveTo).call($, x + X, y + Y)
+				(to = to ? $.lineTo : $.moveTo).call($, x + X, y - Y)
 			$$$(fill)
 		}
 		// 画接触角
 		function $RBC(T, n = 0, O = P * 1.1 + RB, style) {
 			$$({ color: '#999', ...style })
 			let CT = RBC(T, n)[1]
-			$.moveTo(x + PX(T, n, O), y + PY(T, n, O))
-			$.lineTo(x + PX(T, n), y + PY(T, n))
-			$.lineTo(x + PX(T, n) + (O - P) * cos(CT), y + PY(T, n) + (O - P) * sin(CT))
+			$.moveTo(x + PX(T, n, O), y - PY(T, n, O))
+			$.lineTo(x + PX(T, n), y - PY(T, n))
+			$.lineTo(x + PX(T, n) + (O - P) * cos(CT), y - PY(T, n) - (O - P) * sin(CT))
 			$$$()
 		}
 		return Object.assign(
