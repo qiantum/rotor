@@ -84,7 +84,7 @@ function GearInv({
 		// 画齿心
 		function $O(T, O = M * 0.75 * zoom, style) {
 			$$({ color: '#ccc', ...style })
-			$.moveTo(x, y), $.arc(x, y, O, T + T0, T + T0 + PI2), $$$()
+			$.moveTo(x, y), $.arc(x, y, O, -T - T0, PI2 - T - T0), $$$()
 		}
 		// 画基圆
 		function $B(style) {
