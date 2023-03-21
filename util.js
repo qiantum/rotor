@@ -13,6 +13,7 @@ atan = (x, y) => (Math.atan(y / x) + (x <= 0 ? PI : PI2)) % PI2 // [0,PI2)
 dist = (x, y) => Math.sqrt(x * x + y * y)
 diff = v => (((v %= PI2) + v) % PI2) - v // [-PI,PI)
 diffabs = v => abs(diff(v)) // [0,PI] ((v = abs(v) % PI2) > PI ? PI2 - v : v)
+atandist = (x, y) => [atan(x, y), dist(x, y), x, y]
 
 function gcd(a, b) {
 	;(a |= 0), (b |= 0)
@@ -93,6 +94,7 @@ function cross(ax, ay, bx, by, cx, cy, dx, dy, co) {
 	let t = cda / (abd - abc)
 	return [ax + t * (bx - ax), ay + t * (by - ay), abc, abd, cda, cdb]
 }
+// 无交叉，正方向
 function area(s) {
 	let [x0, y0] = (s = s.values?.() ?? s).next().value
 	let [xx, yy] = [x0, y0]

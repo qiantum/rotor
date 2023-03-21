@@ -77,7 +77,7 @@ function RotorHE({
 			for (let T of Tick_) {
 				let X = RX(A, T, p) // 转子对缸体心旋转
 				let Y = RY(A, T, p)
-				yield [atan(X, Y), dist(X, Y), X, Y] // 角[0,PI2) A==0 沿T严格递增 A>0 沿T循环严格递增
+				yield atandist(X, Y) // 角[0,PI2) A==0 沿T严格递增 A>0 沿T循环严格递增
 			}
 		else for (A of A) yield PAT(A, p)
 	}
@@ -102,7 +102,7 @@ function RotorHE({
 	// 冲程区型线
 	let SSS = sequ(0, NS - 1).map(S => {
 		let dots = sequ(tS(-S - 1), tS(-S), tickn, true).imap(t =>
-			QRT(Tick_[t]).imap(([X, Y]) => [atan(X, Y), dist(X, Y), X, Y])
+			QRT(Tick_[t]).imap(([X, Y]) => atandist(X, Y))
 		)
 		let st = [...sequ(tS(-S - 1) - tPQ, tS(-S) + tPQ, tickn, true)] // 转子工作线，此处tickn整倍数
 		let strev = st.rev()
