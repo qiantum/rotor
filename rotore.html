@@ -48,8 +48,8 @@
 				}
 				for (let tt = 0; tt < 3; Break(), tt++) for (let t of ticks) t[tt] = The()
 				if (conf.N == 2 && mode.get('gear') != null) {
-					for (let [t, ge] of Object.entries([1, 0, 1.5, 2.5]))
-						ticks[t].g = Gear(ticks[0].r, ge)
+					for (let [t, eg] of Object.entries([1, 0, 1.5, 2.5]))
+						ticks[t].g = Gear(ticks[0].r, eg)
 					Break()
 				}
 				Tick()
@@ -96,18 +96,17 @@
 					if (abs(s - round(s)) <= 1 / 15) $.SSS(T, Spair(s), Sstyle(Spair(s)))
 					$.SSS(T, s0, Sstyle(s0))
 				}
-				$.GG(T), $.E(T), $.GB(), $.G(T)
+				$.GG(T), $.E(T), $.BG(), $.G(T)
 				ticky && ($.RBC(T), $.PN(T)), $.RQ(T, 0, 0)
-				$.RR(T), $.BB()
+				$.RR(T), $.BB(), ticky && $.RB(T)
 				$.param(T)
-				ticky && $.RB(T)
 				return (the.rot = rot), (the.T = T), the
 			}
 			function DrawSS(rot, s, the) {
 				the.canvas.getContext('2d').clearRect(0, 0, size, size)
 				let $ = (the.$ ??= rot.$(the))
 				let T = rot.TS(s ?? 0)
-				$.GG(0), $.GB(), s != null && $.RR(T), $.param()
+				$.GG(0), $.BG(), s != null && $.RR(T), $.param()
 				for (s = 0; s < rot.NS; s++) $.SSS(0, s, Sstyle(s, sline, sdash), false)
 				return (the.rot = rot), (the.T = T), (the.S = [...sname.keys()]), the
 			}
@@ -136,15 +135,15 @@
 				return { color: color[s], dash: dash?.[s], thick: dash && 4 }
 			}
 
-			function Gear(rot, ge) {
+			function Gear(rot, eg) {
 				let A, Z, Z2, ZZ
 				;(A = 30), (Z = 16), (Z2 = (Z / (rot.N - 1)) * rot.N), (ZZ = Z2 - Z)
-				let BE = round(rot.GB + rot.E * (rot.GE * ge))
+				let BE = round(rot.BG + rot.E * (rot.EG * eg))
 				let M = GearInv.M(ZZ, rot.E, 0)
 				let S, g
-				for (S = rot.GE * ge; (g = new GearInv({ M, A, Z, S })).F < BE; )
+				for (S = rot.EG * eg; (g = new GearInv({ M, A, Z, S })).F < BE; )
 					(S += max(BE - g.F, 0.25) / M), console.log(S)
-				let g2 = new GearInv({ M, A, Z: Z2, S, I: true, T0: PI * (Z << 31 >> 31) })
+				let g2 = new GearInv({ M, A, Z: Z2, S, I: true, T0: PI * ((Z << 31) >> 31) })
 				;(g.G = g.G2(rot.E, g2)), (g2.G = g2.G2(rot.E, g))
 				return { rot, g, g2, the: The(3.2), BE }
 			}

@@ -7,7 +7,7 @@ function RotorHE({
 	E, // 偏心距
 	Q = 0.8, // 缸体拱半径 / 偏心距
 	RB = 0.3, // 转子缸体间隙Z
-	GE = 0, // 节圆变位加粗曲轴
+	EG = 0, // 节圆变位加粗曲轴
 	tickn = 240, // 圆周步进数
 	size, // 预估像素
 	evn,
@@ -26,7 +26,7 @@ function RotorHE({
 	Q = round(E * (Q + N + 4) * 4) / 4 // 缸体拱半径
 	E = round(E * 3) / 3 // 偏心距
 	if ((E | 0) < 1) throw 'err E'
-	let GB = E * NB // 缸体节圆半径
+	let BG = E * NB // 缸体节圆半径
 	let G = E * NR // 转子节圆半径
 	let P = Q - E - E // 缸体顶半径
 	let RP = Q - E - RB // 转子顶半径
@@ -112,13 +112,13 @@ function RotorHE({
 
 	// 缸体顶与转子接触角、及接触步进角
 	function RBC(T, n = 0) {
-		let CT = atan(PX(n) - GB * cos(T * NE), PY(n) - GB * sin(T * NE)) // 两节圆交点--缸体顶点
+		let CT = atan(PX(n) - BG * cos(T * NE), PY(n) - BG * sin(T * NE)) // 两节圆交点--缸体顶点
 		return [diffabs(TN(n) + TPQ - CT), CT]
 	}
 	let RBCC = max(...Tick.map(T => RBC(T)[0])) // 最大接触角
 
 	size = BB.reduce((v, [X, Y]) => max(v, abs(X), abs(Y)), 0)
-	Object.assign(this, { N, NR, NS: NS4, E, GB, G, GE, P, Q, RB, V, K, VN, VB, VV, KK, RBCC })
+	Object.assign(this, { N, NR, NS: NS4, E, EG, BG, G, P, Q, RB, V, K, VN, VB, VV, KK, RBCC })
 	Object.assign(this, { size, GX, GY, TN, TS, BB, RR, SS, VS })
 
 	// 参数显示
@@ -144,11 +144,12 @@ function RotorHE({
 		y ??= canvas.height / 2 + midy // 曲轴心Y
 		let $param = T => (param.textContent = params(T).replace(/__/g, '\n'))
 		let $ = canvas.getContext('2d')
-		let gb = GB + E * GE
-		let g = G + E * GE
-		let gbw = (gb * PI) / max(NB * 4, 9 - 3 * (NR - NB))
-		let gw = (g * PI) / max(NR * 4, 9 + 3 * (NR - NB))
-		let gwi = abs(gbw - gw) / 2
+		$.Arc = (x, y, r, a, b) => $.arc(x, y, r, -a, -b, true)
+		let bg = BG + E * EG
+		let g = G + E * EG
+		let bgz = (bg * PI) / max(NB * 4, 9 - 3 * (NR - NB))
+		let gz = (g * PI) / max(NR * 4, 9 + 3 * (NR - NB))
+		let gzi = abs(bgz - gz) / 2
 
 		function $$({ color = '#000', opa = '', thick = 1, dash } = {}, fill) {
 			$.beginPath(), ($.lineWidth = thick)
@@ -157,7 +158,8 @@ function RotorHE({
 			fill ? ($.fillStyle = color + opa) : ($.strokeStyle = color + opa)
 			dash && $.setLineDash(dash)
 		}
-		function $$$(fill) {
+		function $$$(fill, close) {
+			close && $.closePath()
 			fill ? $.fill() : $.stroke(), ($.lineWidth = 1)
 			fill ? ($.fillStyle = '#000') : ($.strokeStyle = '#000')
 			$.setLineDash([])
@@ -168,18 +170,18 @@ function RotorHE({
 			$.moveTo(x, y), $.lineTo(x + GX(T), y - GY(T)), $$$()
 		}
 		// 画缸体节圆
-		function $GB(style) {
-			$$({ color: '#333', dash: [0, gbw, gbw - gwi, gwi], ...style })
-			$.arc(x, y, gb, 0, PI2), $$$()
+		function $BG(style) {
+			$$({ color: '#333', dash: [0, bgz, bgz - gzi, gzi], ...style })
+			$.Arc(x, y, bg, 0, PI2), $$$()
 		}
 		// 画转子节圆
 		function $G(T, style) {
-			$$({ color: '#999', dash: [gw - gwi, gw + gwi], ...style })
-			$.arc(x + GX(T), y - GY(T), g, -T, PI2 - T), $$$()
+			$$({ color: '#999', dash: [gz - gzi, gz + gzi], ...style })
+			$.Arc(x + GX(T), y - GY(T), g, T, PI2 + T), $$$()
 		}
 		// 画缸体节圆绕转子外包
 		function $GG(T, style) {
-			$$({ color: '#ccc', ...style }), $.arc(x + GX(T), y - GY(T), gb + E, 0, PI2), $$$()
+			$$({ color: '#ccc', ...style }), $.Arc(x + GX(T), y - GY(T), bg + E, 0, PI2), $$$()
 		}
 		// 画转子顶
 		function $RP(T, nr = 0, O, style) {
@@ -207,7 +209,7 @@ function RotorHE({
 		function $RB(T, style) {
 			if (!RB) return
 			for (let Style = { color: '#f00', ...style }, n = 0; n < N; n++)
-				$$(Style), $.arc(x + PX(n), y - PY(n), RB, 0, PI2), $$$()
+				$$(Style), $.Arc(x + PX(n), y - PY(n), RB, 0, PI2), $$$()
 		}
 		// 画腰包络
 		function $QQ(style) {
@@ -256,7 +258,7 @@ function RotorHE({
 			$$$()
 		}
 		return Object.assign(
-			{ param: $param, x, y, E: $E, GB: $GB, G: $G, GG: $GG },
+			{ param: $param, x, y, E: $E, BG: $BG, G: $G, GG: $GG },
 			{ RP: $RP, RQ: $RQ, PN: $PN, QN: $QN, RB: $RB, QQ: $QQ },
 			{ BB: $BB, RR: $RR, SS: $SS, SSS: $SSS, RBC: $RBC }
 		)
